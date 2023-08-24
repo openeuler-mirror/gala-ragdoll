@@ -1,7 +1,7 @@
 # gala-ragdoll
 
 #### 介绍
-An OS-level configuration management service
+gala-ragdoll是基于OS的配置托管服务，能够实现对OS配置的集群式管理，屏蔽不同OS类型的配置差异，实现统一的、可溯源的、预期配置可管理的可信的OS配置运维入口。
 
 #### 软件架构
 软件架构说明
