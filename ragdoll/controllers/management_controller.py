@@ -108,21 +108,26 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
     # content is empty
     if len(contents_list_null) > 0:
-        conf_list = []
-        host_list = []
-
         # get the real conf in host
         print("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
         print("contents_list_null is : {}".format(contents_list_null))
+        exist_host = dict()
         for d_conf in contents_list_null:
-            confs_list = []
-            confs = {}
-            confs["host_id"] = int(d_conf.host_id)
-            confs_list.append(d_conf.file_path)
-            confs["config_list"] = confs_list
+            host_id = int(d_conf.host_id)
+            if host_id in exist_host:
+                exist_host[host_id].append(d_conf.file_path)
+            else:
+                conf_list = list()
+                conf_list.append(d_conf.file_path)
+                exist_host[host_id] = conf_list
+        for k,v in exist_host:
+            confs = dict()
+            confs["host_id"] = k
+            confs["config_list"] = v
             get_real_conf_body_info.append(confs)
+
         get_real_conf_body["infos"] = get_real_conf_body_info
 
         url = conf_tools.load_url_by_conf().get("collect_url")
