@@ -1,0 +1,8 @@
+新增text文本类型溯源配置管理
+功能概述：增加/etc/hostname、 /etc/group 、/etc/passwd、 /etc/shadow文件的溯源配置
+
+code修改点:
+1、增加关于/etc/hostname、 /etc/group 、/etc/passwd、 /etc/shadow的yang文件：
+openEuler-hostname.yang、openEuler-group.yang、openEuler-passwd.yang、openEuler-shadow.yang
+2、增加text类型的序列化和反序列化读写和对比的处理逻辑：text_config.py
+3、增加测试text类型的溯源配置文件的单元测试：test_text_config.py
