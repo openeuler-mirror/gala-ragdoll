@@ -247,6 +247,28 @@ paths:
             items:
               $ref: "#/definitions/RealConfInfo"
       x-swagger-router-controller: "ragdoll.controllers.confs_controller"
+  /confs/querySupportedConfs:
+    post:
+      tags:
+        - "confs"
+      summary: "query supported configuration list"
+      description: "query supported configuration list"
+      operationId: "query_supported_confs"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/DomainName"
+      responses:
+        "200":
+          description: "query supported configuration list successfully"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SupportedConf"
+      x-swagger-router-controller: "ragdoll.controllers.confs_controller"
   /confs/queryExpectedConfs:
     post:
       tags:
@@ -268,18 +290,18 @@ paths:
   /confs/syncConf:
     put:
       tags:
-      - "confs"
+        - "confs"
       summary: "synchronize the configuration information of the configuration domain\
         \ to the host"
       description: "synchronize the configuration information of the configuration\
         \ domain to the host"
       operationId: "sync_conf_to_host_from_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/ConfHost"
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/SyncReq"
       responses:
         "200":
           description: "synchronize the configuration items successfully"
@@ -754,3 +776,25 @@ definitions:
         type: "string"
       status:
         type: "boolean"
+  SupportedConf:
+    type: "string"
+  SyncHostConfs:
+    type: "object"
+    properties:
+      hostId:
+        type: "integer"
+        description: "the id of host"
+      syncConfigs:
+        type: "array"
+        items:
+          type: "string"
+  SyncReq:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      syncList:
+        type: "array"
+        items:
+          $ref: "#/definitions/SyncHostConfs"

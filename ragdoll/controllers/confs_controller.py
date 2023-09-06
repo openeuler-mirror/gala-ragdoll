@@ -18,6 +18,7 @@ from ragdoll.models.conf_synced_res import ConfSyncedRes
 from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.host_sync_result import HostSyncResult
 from ragdoll.models.host_sync_status import HostSyncStatus
+from ragdoll.models.sync_req import SyncReq
 
 from ragdoll.models.real_conf import RealConf
 from ragdoll.controllers.format import Format
@@ -27,6 +28,7 @@ from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
 from ragdoll import util
+from ragdoll.const.conf_files import yang_conf_list
 
 TARGETDIR = GitTools().target_dir
 
@@ -422,10 +424,15 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     :rtype: List[HostSyncResult]
     """
     if connexion.request.is_json:
-        body = ConfHost.from_dict(connexion.request.get_json())  # noqa: E501
+        body = SyncReq.from_dict(connexion.request.get_json())  # noqa: E501
 
     domain = body.domain_name
-    host_list = body.host_ids
+    sync_list = body.sync_list
+
+    host_sync_confs = dict()
+
+    for sync in sync_list:
+        host_sync_confs[sync.host_id] = sync.sync_configs
 
     # check the input domain
     check_res = Format.domainCheck(domain)
@@ -454,11 +461,12 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     # Check whether the host is in the managed host list
     exist_host = []
-    if len(host_list) > 0:
-        for host in host_list:
+    if len(host_sync_confs) > 0:
+        host_ids = host_sync_confs.keys()
+        for host_id in host_ids:
             for d_host in res_host_text:
-                if host.get("hostId") == d_host.get("hostId"):
-                    exist_host.append(host)
+                if host_id == d_host.get("hostId"):
+                    exist_host.append(host_id)
     else:
         for d_host in res_host_text:
             temp_host = {}
@@ -468,8 +476,8 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     if len(exist_host) == 0:
         code_num = 400
-        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." + 
-                                          "Please add the host information first")
+        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+                                "Please add the host information first")
         return base_rsp, code_num
 
     # get the management conf in domain
@@ -477,35 +485,94 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     get_man_conf_url = "http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     get_man_conf_body = DomainName(domain_name=domain)
-    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body), headers=headers)  # post request
+    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body),
+                                     headers=headers)  # post request
     man_conf_res_text = json.loads(get_man_conf_res.text)
     manage_confs = man_conf_res_text.get("confFiles")
     print("manage_confs is : {}".format(manage_confs))
 
     # Deserialize and reverse parse the expected configuration
     sync_res = []
-    for d_host in exist_host:
-        host_sync_result = HostSyncResult(host_id=d_host,
-                           sync_result=[])
-        for d_man_conf in manage_confs:
-            file_path = d_man_conf.get("filePath").split(":")[-1]
-            contents = d_man_conf.get("contents")
-            object_parse = ObjectParse()
-            content = object_parse.parse_json_to_conf(file_path, contents)
-            # Configuration to the host
-            sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
-            headers = {"Content-Type": "application/json"}
-            data = {"host_id": d_host, "file_path": file_path, "content": content}
-            sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+    for host_id in exist_host:
+        host_sync_result = HostSyncResult(host_id=host_id,
+                                          sync_result=[])
+        sync_confs = host_sync_confs.get(host_id)
+        for conf in manage_confs:
+            file_path = conf.get("filePath").split(":")[-1]
+            if file_path in sync_confs:
+                contents = conf.get("contents")
+                object_parse = ObjectParse()
+                content = object_parse.parse_json_to_conf(file_path, contents)
+                # Configuration to the host
+                sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
+                headers = {"Content-Type": "application/json"}
+                data = {"host_id": host_id, "file_path": file_path, "content": content}
+                sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
 
-            resp_status = json.loads(sync_response.text).get("status")
-            conf_sync_res = ConfSyncedRes(file_path=file_path,
-                                          result="")
-            if resp_status:
-                conf_sync_res.result = "SUCCESS"
-            else:
-                conf_sync_res.result = "FAILED"
-            host_sync_result.sync_result.append(conf_sync_res)
+                resp_code = json.loads(sync_response.text).get('code')
+                resp = json.loads(sync_response.text).get('data').get('resp')
+                conf_sync_res = ConfSyncedRes(file_path=file_path,
+                                              result="")
+                if resp_code == "200" and resp.get('sync_result') is True:
+                    conf_sync_res.result = "SUCCESS"
+                else:
+                    conf_sync_res.result = "FAILED"
+                host_sync_result.sync_result.append(conf_sync_res)
         sync_res.append(host_sync_result)
 
     return sync_res
+
+def query_supported_confs(body=None):
+    """
+        query supported configuration list # noqa: E501
+
+       :param body:
+       :type body: dict | bytes
+
+       :rtype: List
+    """
+    if connexion.request.is_json:
+        body = DomainName.from_dict(connexion.request.get_json())
+
+    domain = body.domain_name
+
+    check_res = Format.domainCheck(domain)
+    if not check_res:
+        code_num = 400
+        base_rsp = BaseResponse(code_num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, code_num
+
+    is_exist = Format.isDomainExist(domain)
+    if not is_exist:
+        code_num = 404
+        base_rsp = BaseResponse(code_num, "The current domain does not exist, please create the domain first.")
+        return base_rsp, code_num
+
+    conf_tools = ConfTools()
+    port = conf_tools.load_port_by_conf()
+    url = "http://0.0.0.0:" + port + "/management/getManagementConf"
+    headers = {"Content-Type": "application/json"}
+    get_man_conf_body = DomainName(domain_name=domain)
+    print("body is : {}".format(get_man_conf_body))
+    response = requests.post(url, data=json.dumps(get_man_conf_body), headers=headers)  # post request
+    print("response is : {}".format(response.text))
+    res_code = response.status_code
+    res_json = json.loads(response.text)
+    print("return code is : {}".format(response.status_code))
+
+    if res_code != 200:
+        code_num = res_code
+        base_rsp = BaseResponse(code_num,
+                                "Failed to query the configuration items managed in the current domain. " +
+                                "The failure reason is:" + res_json)
+        return base_rsp, code_num
+
+    conf_files = res_json.get("confFiles")
+    if len(conf_files) == 0:
+        return yang_conf_list
+
+    exist_conf_list = []
+    for conf in conf_files:
+        exist_conf_list.append(conf.get('filePath'))
+
+    return list(set(yang_conf_list).difference(set(exist_conf_list)))
