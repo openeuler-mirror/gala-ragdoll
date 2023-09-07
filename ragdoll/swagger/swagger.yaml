@@ -163,6 +163,33 @@ paths:
           schema:
             $ref: "#/definitions/BaseResponse"
       x-swagger-router-controller: "ragdoll.controllers.management_controller"
+  /management/uploadManagementConf:
+    post:
+      tags:
+        - "management"
+      summary: "upload management configuration items and expected values in the domain"
+      description: "upload management configuration items and expected values in the\
+        \ domain"
+      operationId: "upload_management_confs_in_domain"
+      parameters:
+        - in: "formData"
+          name: "file"
+          required: false
+          type: file
+        - in: "formData"
+          name: "filePath"
+          required: false
+          type: string
+        - in: "formData"
+          name: "domainName"
+          required: false
+          type: string
+      responses:
+        "200":
+          description: "upload management configuration items successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+      x-swagger-router-controller: "ragdoll.controllers.management_controller"
   /management/getManagementConf:
     post:
       tags:
