@@ -17,6 +17,7 @@ Description: /etc/hosts config handler
 import re
 import json
 
+from ragdoll.config_model.base_handler_config import BaseHandlerConfig
 from ragdoll.log.log import LOGGER
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED
