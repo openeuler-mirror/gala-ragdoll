@@ -103,7 +103,7 @@ class HostsConfig(BaseHandlerConfig):
 
     def write_conf(self):
         content = ""
-        for key, value in self.conf:
+        for key, value in self.conf.items():
             if value is not None:
                 conf_item = " ".join((key, str(value))).replace('\n', '\n\t')
                 content = content + conf_item + "\n"
