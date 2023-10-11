@@ -786,7 +786,7 @@ definitions:
     type: "object"
     properties:
       host_id:
-        type: "string"
+        type: "integer"
       config_list:
         type: "array"
         items: 

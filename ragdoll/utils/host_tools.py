@@ -74,11 +74,11 @@ class HostTools(object):
         """
         res = []
         for d_host in domainHost:
-            hostId = int(d_host.get('hostId'))
+            hostId = int(d_host.get('host_id'))
             print("the host Id is : {}".format(hostId))
             d_host = {}
             d_host["hostId"] = hostId
-            res.append(d_host)
+            res.append(hostId)
 
         return res
 
