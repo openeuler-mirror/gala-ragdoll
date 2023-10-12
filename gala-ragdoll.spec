@@ -3,18 +3,17 @@ Version:	v1.4.0
 Release:	1
 Summary:	Configuration traceability
 License:	MulanPSL2
-URL:		https://gitee.com/openeuler/A-Ops
+URL:		https://gitee.com/openeuler/%{name}
 Source0:	%{name}-%{version}.tar.gz
 %global debug_package %{nil}
 
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
-BuildRequires:	git python3-devel systemd
-BuildRequires:  python3-setuptools python3-kafka-python python3-connexion
+BuildRequires:	git python3-devel systemd python3-concurrent-log-handler
 
-Requires:   python3-gala-ragdoll = %{version}-%{release}
+Requires:   python3-gala-ragdoll = %{version}-%{release} python3-concurrent-log-handler
 
 %description
-The intelligent ops toolkit for openEuler
+An os-level configuration management service
 
 
 
