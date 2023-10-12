@@ -48,6 +48,7 @@ class FstabConfig(BaseHandlerConfig):
     def write_conf(self):
         content = ""
         for value_list in self.conf:
-            line = " ".join(str(value) for value in value_list)
-            content = content + line + "\n"
+            if value_list is not None:
+                line = " ".join(str(value) for value in value_list)
+                content = content + line + "\n"
         return content

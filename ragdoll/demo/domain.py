@@ -21,9 +21,13 @@ class DomainManage(object):
             data.append(domain)
         url = "http://0.0.0.0:{}/domain/createDomain".format(server_port)
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
+        try:
+            response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
+            if response.text is not None:
+                print(json.loads(response.text).get("msg"))
+        except Exception as p:
+            print(str(p))
         
-        print(json.loads(response.text).get("msg"))
         return
     
     def domain_delete(self, args):
