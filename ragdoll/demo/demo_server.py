@@ -28,9 +28,6 @@ def collect_conf(body=None):
     failure_flag = False
     for req in request_infos:
         conf_list = req["config_list"]
-        if len(conf_list) == 0:
-            return rsp
-
         _resp = {"host_id": req["host_id"], "infos":[], "fail_files":[]}
         for conf_path in conf_list:
             conf_info = _read_file(conf_path)
@@ -45,7 +42,10 @@ def collect_conf(body=None):
                 _resp["fail_files"].append(conf_path)
                 failure_flag = True
         resp.append(_resp)
-    
+
+    rsp["code"] = 206
+    rsp["msg"] = "Some configurations fail to be collected."
+
     if not failure_flag:
         rsp["code"] = 200
         rsp["msg"] = "The configuration file is collected successfully."
@@ -53,9 +53,7 @@ def collect_conf(body=None):
     if not success_flag:
         rsp["code"] = 500
         rsp["msg"] = "Failed to collect configuration data"
-
-    rsp["code"] = 206
-    rsp["msg"] = "Some configurations fail to be collected."
+        
     return rsp
 
 def _write_file(path, content):
