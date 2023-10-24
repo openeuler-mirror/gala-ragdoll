@@ -1,5 +1,6 @@
 import os
 
+from ragdoll.log.log import LOGGER
 from ragdoll.utils.git_tools import GitTools
 
 class Prepare(object):
@@ -16,7 +17,7 @@ class Prepare(object):
 
     def mdkir_git_warehose(self, username, useremail):
         res = True
-        print("self._target_dir is : {}".format(self._target_dir))
+        LOGGER.debug("self._target_dir is : {}".format(self._target_dir))
         if os.path.exists(self._target_dir):
             rest = self.git_init(username, useremail)
             return rest

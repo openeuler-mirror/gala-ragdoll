@@ -1,6 +1,7 @@
 import requests
 import json
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.conf_host import ConfHost
@@ -13,7 +14,7 @@ class ConfSync(object):
         domain_name = args.domain_name
         host_id_list = args.host_id
         if not domain_name or not host_id_list:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
 
         host_ids = []
@@ -27,14 +28,13 @@ class ConfSync(object):
         response = requests.put(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
         if response.status_code != 200:
-            print("Error!")
-        print(json.loads(response.text))
+            LOGGER.error(json.loads(response.text))
         return
 
     def sync_status(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         data = DomainName(domain_name=domain_name)
@@ -43,16 +43,16 @@ class ConfSync(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
         if response.status_code != 200:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         else:
-            print(json.loads(response.text))
+            LOGGER.debug(json.loads(response.text))
         return
 
     def query_real_conf(self, args):
         domain_name = args.domain_name
         host_id_list = args.host_id
         if not domain_name or not host_id_list:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         host_ids = []
@@ -66,9 +66,9 @@ class ConfSync(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
 
         if response.status_code != 200:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         else:
-            print(json.loads(response.text))
+            LOGGER.debug(json.loads(response.text))
         return
 
     def query_expected_conf(self, args):
@@ -76,5 +76,5 @@ class ConfSync(object):
             return
         url = "http://0.0.0.0:{}/confs/queryExpectedConfs".format(server_port)
         response = requests.post(url)
-        print(json.loads(response.text))
+        LOGGER.debug(json.loads(response.text))
         return

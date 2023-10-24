@@ -9,6 +9,7 @@ from enum import Enum
 
 from ragdoll.utils.git_tools import GitTools
 from ragdoll.controllers.format import Format
+from ragdoll.log.log import LOGGER
 from ragdoll.models.real_conf import RealConf
 from ragdoll.models.real_conf_path import RealConfPath
 from ragdoll.models.conf_is_synced import ConfIsSynced
@@ -84,11 +85,11 @@ class ConfTools(object):
 
     def listToDict(self, manaConfs):
         res = {}
-        print("manaConfs is : {}".format(manaConfs))
-        print("the typr of manaConfs is : {}".format(type(manaConfs)))
+        LOGGER.debug("manaConfs is : {}".format(manaConfs))
+        LOGGER.debug("the typr of manaConfs is : {}".format(type(manaConfs)))
         for d_conf in manaConfs:
-            print("d_conf is : {}".format(d_conf))
-            print("the type of d_conf is : {}".format(type(d_conf)))
+            LOGGER.debug("d_conf is : {}".format(d_conf))
+            LOGGER.debug("the type of d_conf is : {}".format(type(d_conf)))
             path = d_conf.get(PATH)
             value = d_conf.get(EXCEPTED_VALUE).strip()
             level = path.split("/")
@@ -124,7 +125,7 @@ class ConfTools(object):
         desc: Add feature information in the model to the actual configuration.
         """
         realConfWithFeature = {}
-        print("featureList is : {}".format(featureList))
+        LOGGER.debug("featureList is : {}".format(featureList))
         lenFeature = len(featureList)
         tempRealConf = realConfDict
         d_real_file = {}
@@ -179,10 +180,10 @@ class ConfTools(object):
         """
         res = []
         conf_nums = len(realConfResText)
-        print("realConfResText is : {}".format(realConfResText))
+        LOGGER.debug("realConfResText is : {}".format(realConfResText))
         for d_conf in realConfResText:
-            print("d_conf is : {}".format(d_conf))
-            print("d_conf 's type is : {}".format(type(d_conf)))
+            LOGGER.debug("d_conf is : {}".format(d_conf))
+            LOGGER.debug("d_conf 's type is : {}".format(type(d_conf)))
             domainName = d_conf.get("domainName")
             hostId = d_conf.get("hostID")
             conf_base_infos = d_conf.get("confBaseInfos")
@@ -192,7 +193,7 @@ class ConfTools(object):
             for d_conf_info in conf_base_infos:
                 paths = d_conf_info.get("path").split(" ")
                 confContents = json.loads(d_conf_info.get("confContents"))
-                print("confContents is : {}".format(confContents))
+                LOGGER.debug("confContents is : {}".format(confContents))
                 for d_path in paths:
                     x_path = os.path.join(domainName, d_path)
                     remove_feature_path = d_path.split("/")[2:]
@@ -264,7 +265,7 @@ class ConfTools(object):
         cmd = "rpm -qf {}".format(path)
         gitTools = GitTools()
         package_string = gitTools.run_shell_return_output(cmd).decode()
-        print("package_string is : {}".format(package_string))
+        LOGGER.debug("package_string is : {}".format(package_string))
         # lines = returnCode.rsplit(STRIKETHROUGH)
         # res = lines[0]
         if 'not owned by any package' in package_string:
@@ -311,7 +312,7 @@ class ConfTools(object):
         cmd = STAT + SPACE + path
         gitTools = GitTools()
         stat_rest = gitTools.run_shell_return_output(cmd).decode()
-        print("the stat_rest is : {}".format(stat_rest))
+        LOGGER.debug("the stat_rest is : {}".format(stat_rest))
         fileAttr = ""
         fileOwner = ""
         lines = stat_rest.splitlines()
@@ -333,8 +334,8 @@ class ConfTools(object):
 
         if not fileAttr or not fileOwner:
             fileAttr, fileOwner = self.getFileAttrByLL(path)
-        print("fileAttr is : {}".format(fileAttr))
-        print("fileOwner is : {}".format(fileOwner))
+        LOGGER.debug("fileAttr is : {}".format(fileAttr))
+        LOGGER.debug("fileOwner is : {}".format(fileOwner))
         return fileAttr, fileOwner
 
     def getFileAttrByLL(self, path):
@@ -353,10 +354,10 @@ class ConfTools(object):
         if not os.path.exists(LS):
             return None, None
         cmd = LS + SPACE + LL + SPACE + path
-        print("cmd is : {}".format(cmd))
+        LOGGER.debug("cmd is : {}".format(cmd))
         gitTools = GitTools()
         ll_res = gitTools.run_shell_return_output(cmd).decode()
-        print("ll_res is : {}".format(ll_res))
+        LOGGER.debug("ll_res is : {}".format(ll_res))
         ll_res_list = ll_res.split(SPACE)
 
         fileType = ll_res_list[0]
@@ -368,10 +369,10 @@ class ConfTools(object):
                 d_item_value = self.switch_perm(d_item)
                 value = value + d_item_value
             permssions = permssions + str(value)
-        print("the perssion is : {}".format(permssions))
+        LOGGER.debug("the perssion is : {}".format(permssions))
 
         fileOwner = LeftParen + ll_res_list[2] + SPACE + ll_res_list[3] + RightParen
-        print("the fileOwner is : {}".format(fileOwner))
+        LOGGER.debug("the fileOwner is : {}".format(fileOwner))
 
         return permssions, fileOwner
 
@@ -414,7 +415,7 @@ class ConfTools(object):
             path_git_delete_last = path_git_delete_last + '/' + paths[d_index]
         if not os.path.exists(path_git):
             cmd = "mkdir -p " + path_git_delete_last
-            print("cmd is : {}".format(cmd))
+            LOGGER.debug("cmd is : {}".format(cmd))
             gitTools = GitTools()
             ll_res = gitTools.run_shell_return_output(cmd).decode()
 
@@ -586,10 +587,10 @@ class ConfTools(object):
                 path_delete_last = path_delete_last + '/' + paths[d_index]
             if not os.path.exists(path_delete_last):
                 cmd = "mkdir -p " + path_delete_last
-                print("cmd is : {}".format(cmd))
+                LOGGER.debug("cmd is : {}".format(cmd))
                 gitTools = GitTools()
                 ll_res = gitTools.run_shell_return_output(cmd).decode()
-            print("path_delete_last IS :{}".format(path_delete_last))
+            LOGGER.debug("path_delete_last IS :{}".format(path_delete_last))
             if not os.path.exists(path_delete_last):
                 return res
 
@@ -629,7 +630,7 @@ class ConfTools(object):
         desc: get the password of collect conf
         """
         cf = configparser.ConfigParser()
-        print("CONFIG is :{}".format(CONFIG))
+        LOGGER.debug("CONFIG is :{}".format(CONFIG))
         if os.path.exists(CONFIG):
             cf.read(CONFIG, encoding="utf-8")
         else:

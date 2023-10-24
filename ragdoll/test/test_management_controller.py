@@ -9,6 +9,7 @@ import urllib
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf import Conf
 from ragdoll.models.confs import Confs
@@ -44,7 +45,7 @@ class TestManagementController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("response is : {}".format(response.data))
+        LOGGER.debug("response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -63,7 +64,7 @@ class TestManagementController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("response is : {}".format(response.data))
+        LOGGER.debug("response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -95,7 +96,7 @@ class TestManagementController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("response is : {}".format(response.data))
+        LOGGER.debug("response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -112,9 +113,9 @@ class TestManagementController(BaseTestCase):
         #}
         body = DomainName(domain_name="OS")
         response = requests.post(url, data=json.dumps(body), headers=headers)  # 发送请求
-        print("response is : {}".format(response))
+        LOGGER.debug("response is : {}".format(response))
         text = response.text
-        print(json.loads(text))
+        LOGGER.debug(json.loads(text))
 
     def test_query_changelog_of_management_confs_in_domain(self):
         """Test case for query_changelog_of_management_confs_in_domain
@@ -131,7 +132,7 @@ class TestManagementController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("response is : {}".format(response))
+        LOGGER.debug("response is : {}".format(response))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

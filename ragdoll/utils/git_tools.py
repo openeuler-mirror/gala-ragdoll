@@ -5,6 +5,8 @@ import configparser
 import ast
 from datetime import datetime
 from dateutil.parser import parse
+
+from ragdoll.log.log import LOGGER
 from ragdoll.models.git_log_message import GitLogMessage
 from ragdoll.models.conf_base_info import ConfBaseInfo
 from ragdoll.controllers.format import Format
@@ -95,9 +97,9 @@ class GitTools(object):
     # Execute the shell command and return the execution node and output
     def run_shell_return_output(self, shell):
         cmd = subprocess.Popen(shell, stdout=subprocess.PIPE, shell=True)
-        print("################# shell cmd ################")
-        print("subprocess.Popen({shell}, stdout=subprocess.PIPE, shell=True)".format(shell=shell))
-        print("################# shell cmd end ################")
+        LOGGER.debug("################# shell cmd ################")
+        LOGGER.debug("subprocess.Popen({shell}, stdout=subprocess.PIPE, shell=True)".format(shell=shell))
+        LOGGER.debug("################# shell cmd end ################")
         output, err = cmd.communicate()
         return output
 
@@ -105,11 +107,11 @@ class GitTools(object):
     def makeGitMessage(self, path, logMessage):
         if len(logMessage) == 0:
             return "the logMessage is null"
-        print("AAAA path is : {}".format(path))
+        LOGGER.debug("AAAA path is : {}".format(path))
         cwdDir = os.getcwd()
         os.chdir(self._target_dir)
-        print(os.getcwd())
-        print("logMessage is : {}".format(logMessage))
+        LOGGER.debug(os.getcwd())
+        LOGGER.debug("logMessage is : {}".format(logMessage))
         gitLogMessageList = []
         singleLogLen = 6
         # the count is num of message
@@ -117,7 +119,7 @@ class GitTools(object):
         lines = logMessage.split('\n')
 
         for index in range(0, count):
-            print("AAAAAAAAAAAAAAA count is : {}".format(index))
+            LOGGER.debug("AAAAAAAAAAAAAAA count is : {}".format(index))
             gitMessage = GitLogMessage()
             for temp in range(0, singleLogLen):
                 line = lines[index * singleLogLen + temp]
@@ -129,10 +131,10 @@ class GitTools(object):
                 if "Date" in line:
                     gitMessage._date = value[2:]
             gitMessage.change_reason = lines[index * singleLogLen + 4]
-            print("gitMessage is : {}".format(gitMessage))
+            LOGGER.debug("gitMessage is : {}".format(gitMessage))
             gitLogMessageList.append(gitMessage)
 
-        print("################# gitMessage start ################")
+        LOGGER.debug("################# gitMessage start ################")
         if count == 1:
             last_message = gitLogMessageList[0]
             last_message.post_value = Format.get_file_content_by_read(path)
@@ -140,7 +142,7 @@ class GitTools(object):
             return gitLogMessageList
 
         for index in range(0, count - 1):
-            print("index is : {}".format(index))
+            LOGGER.debug("index is : {}".format(index))
             message = gitLogMessageList[index]
             next_message = gitLogMessageList[index + 1]
             message.post_value = Format.get_file_content_by_read(path)
@@ -151,7 +153,7 @@ class GitTools(object):
         first_message = gitLogMessageList[count - 1]
         first_message.post_value = Format.get_file_content_by_read(path)
 
-        print("################# gitMessage end ################")
+        LOGGER.debug("################# gitMessage end ################")
         os.chdir(cwdDir)
         return gitLogMessageList
 

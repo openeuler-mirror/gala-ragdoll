@@ -5,6 +5,7 @@ import json
 import re
 import ast
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
@@ -60,7 +61,7 @@ def add_host_in_domain(body=None):  # noqa: E501
         if os.path.isfile(hostPath):
             isContained = Format.isContainedHostIdInfile(hostPath, host.host_id)
             if isContained:
-                print("##########isContained###############")
+                LOGGER.debug("##########isContained###############")
                 failedHost.append(host.host_id)
             else:
                 Format.addHostToFile(hostPath, host)
@@ -166,7 +167,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
                         else:
                             isContained = True
         except OSError as err:
-            print("OS error: {0}".format(err))
+            LOGGER.error("OS error: {0}".format(err))
             codeNum = 500
             base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
             return base_rsp, codeNum
@@ -242,7 +243,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
 
     # The domain exists, and the host information exists and is not empty
     hostlist = []
-    print("hostPath is : {}".format(hostPath))
+    LOGGER.debug("hostPath is : {}".format(hostPath))
     try:
         with open(hostPath, 'r') as d_file:
             for line in d_file.readlines():
@@ -254,7 +255,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
                 host = Host(host_id=hostId, ip=ip, ipv6=ipv6)
                 hostlist.append(host)
     except OSError as err:
-        print("OS error: {0}".format(err))
+        LOGGER.error("OS error: {0}".format(err))
         codeNum = 500
         base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
         return base_rsp, codeNum
@@ -265,7 +266,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, "Some unknown problems.")
         return base_rsp, codeNum
     else:
-        print("hostlist is : {}".format(hostlist))
+        LOGGER.debug("hostlist is : {}".format(hostlist))
         codeNum = 200
         base_rsp = BaseResponse(codeNum, "Get host info in the domain succeccfully")
 

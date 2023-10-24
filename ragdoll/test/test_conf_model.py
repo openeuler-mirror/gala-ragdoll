@@ -9,6 +9,7 @@ import subprocess
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.test import BaseTestCase
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.object_parse import ObjectParse
@@ -24,7 +25,7 @@ class TestConfModel():
         """
         desc: check the config_model object from yang module
         """
-        print("############ test: create_config_model_by_yang_module ############")
+        LOGGER.debug("############ test: create_config_model_by_yang_module ############")
         # load all module
         yang_modules = YangModule()
         module_lists = yang_modules.module_list
@@ -42,32 +43,32 @@ class TestConfModel():
         object_parse = ObjectParse()
         conf_model = object_parse.create_conf_model_by_type(conf_type)
         if conf_model:
-            print("{}yang: {}, conf_type: {}, conf_model: {}\n".format(" "*4, real_module[0], conf_type, conf_model))
-            print("The config_model was successfully created.\n")
+            LOGGER.debug("{}yang: {}, conf_type: {}, conf_model: {}\n".format(" "*4, real_module[0], conf_type, conf_model))
+            LOGGER.debug("The config_model was successfully created.\n")
         else:
-            print("Failed to create config_model.\n")
+            LOGGER.warning("Failed to create config_model.\n")
         return real_module[0], conf_type, conf_model
 
     def check_config_model(self, yang_module, conf_type, conf_model):
         """
         desc: Check the serialization function of the conf_model
         """
-        print("############ test: check_config_model ############")
+        LOGGER.debug("############ test: check_config_model ############")
         result = None
         conf_info = Format.get_file_content_by_read(self._file)
-        print("{}conf_info: {}".format(" "*4, conf_info))
+        LOGGER.debug("{}conf_info: {}".format(" "*4, conf_info))
 
         conf_model.load_yang_model(yang_module)
         conf_model.read_conf(conf_info)
-        print("{}conf_info in model: {}.\n".format(" "*4, conf_model.conf))
+        LOGGER.debug("{}conf_info in model: {}.\n".format(" "*4, conf_model.conf))
 
         object_parse = ObjectParse()
         conf_json = object_parse.parse_model_to_json(conf_model)
         if conf_json:
-            print("{}conf_json: {}\n".format(" "*4, conf_json))
-            print("Current config_model is successfully to converted in this project!\n")
+            LOGGER.debug("{}conf_json: {}\n".format(" "*4, conf_json))
+            LOGGER.debug("Current config_model is successfully to converted in this project!\n")
         else:
-            print("Current config_model is failed to converted in this project!\n")
+            LOGGER.warning("Current config_model is failed to converted in this project!\n")
         return conf_model
 
 def parse_command_line():

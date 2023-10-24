@@ -64,7 +64,7 @@ class HostsConfig(BaseHandlerConfig):
             ip_domain = re.split("\s+", line)
             if len(ip_domain) == 1:
                 error_conf = True
-                LOGGER.info("ip_domain contains incorrect formatting")
+                LOGGER.warning("ip_domain contains incorrect formatting")
                 break
             ip = ip_domain[0]
             if ipv4.match(ip) or ipv6.match(ip):
@@ -73,7 +73,7 @@ class HostsConfig(BaseHandlerConfig):
                 res[ip] = str_value
             else:
                 error_conf = True
-                LOGGER.info("ip does not meet the ipv4 or ipv6 format")
+                LOGGER.warning("ip does not meet the ipv4 or ipv6 format")
                 break
 
         return error_conf, res

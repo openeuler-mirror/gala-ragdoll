@@ -7,6 +7,7 @@ import importlib
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.test import BaseTestCase
 from ragdoll.utils.yang_module import YangModule
 
@@ -15,7 +16,7 @@ class TestYang(BaseTestCase):
     def test_yang_module(self):
         yang_module = YangModule()
         yangdir = yang_module.yang_dir
-        print("yangdir is : {}".format(yangdir))
+        LOGGER.debug("yangdir is : {}".format(yangdir))
         if not yangdir:
             return False
 
@@ -29,8 +30,8 @@ class TestYang(BaseTestCase):
                     success_module.append(module_path)
                 else:
                     failed_module.append(module_path)
-        print("\n")
-        print("The result of test_yang_module is : {}".format(success_module))
+        LOGGER.debug("\n")
+        LOGGER.debug("The result of test_yang_module is : {}".format(success_module))
         self.assertEqual(len(failed_module), 0)
 
     def test_yang_extension(self):
@@ -53,8 +54,8 @@ class TestYang(BaseTestCase):
                 success_module.append(module_name)
             else:
                 failed_module.append(module_name)
-        print("\n")
-        print("The result of test_yang_extension is : {}".format(res))
+        LOGGER.debug("\n")
+        LOGGER.debug("The result of test_yang_extension is : {}".format(res))
         self.assertEqual(len(failed_module), 0)
 
     def test_yang_xpath(self):
@@ -69,8 +70,8 @@ class TestYang(BaseTestCase):
             else:
                 failed_module.append(xpath)
 
-        print("\n")
-        print("The result of test_yang_xpath is : {}".format(xpath_list))
+        LOGGER.debug("\n")
+        LOGGER.debug("The result of test_yang_xpath is : {}".format(xpath_list))
         self.assertEqual(len(failed_module), 0)
 
 if __name__ == '__main__':

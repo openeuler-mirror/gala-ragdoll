@@ -1,6 +1,7 @@
 import requests
 import json
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.host import Host
@@ -16,7 +17,7 @@ class HostManage(object):
         ipv6_list = args.ipv6
         
         if len(host_id_list) != len(ip_list):
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         host_infos = []
@@ -28,13 +29,13 @@ class HostManage(object):
         url = "http://0.0.0.0:{}/host/addHost".format(server_port)
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
-        print(json.loads(response.text).get("msg"))
+        LOGGER.debug(json.loads(response.text).get("msg"))
         return
 
     def host_query(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         data = DomainName(domain_name=domain_name)
@@ -43,9 +44,9 @@ class HostManage(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
 
         if response.status_code != 200:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         else:
-            print("The following host are managed in domain_name:{}.".format(json.loads(response.text)))
+            LOGGER.debug("The following host are managed in domain_name:{}.".format(json.loads(response.text)))
         return
 
     def host_delete(self, args):
@@ -55,7 +56,7 @@ class HostManage(object):
         ipv6_list = args.ipv6
         
         if len(host_id_list) != len(ip_list):
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         host_infos = []
@@ -67,5 +68,5 @@ class HostManage(object):
         url = "http://0.0.0.0:{}/host/deleteHost".format(server_port)
         headers = {"Content-Type": "application/json"}
         response = requests.delete(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
-        print(json.loads(response.text).get("msg"))
+        LOGGER.debug(json.loads(response.text).get("msg"))
         return

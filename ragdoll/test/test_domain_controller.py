@@ -5,6 +5,7 @@ import requests
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain import Domain  # noqa: E501
 from ragdoll.test import BaseTestCase
@@ -29,7 +30,7 @@ class TestDomainController1(BaseTestCase):
             data=json.dumps(body),
             content_type='application/json')
 
-        print("response is : {}".format(response.data))
+        LOGGER.debug("response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -45,7 +46,7 @@ class TestDomainController1(BaseTestCase):
             method='DELETE',
             query_string=query_string)
 
-        print("response is : {}".format(response.data))
+        LOGGER.debug("response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -60,9 +61,9 @@ class TestDomainController1(BaseTestCase):
                         priority = 0)
         body = [domain]
         response = requests.post(url, data=json.dumps(body),headers=headers)  # 发送请求
-        print("response is : {}".format(response))
+        LOGGER.debug("response is : {}".format(response))
         text = response.text
-        print(json.loads(text))
+        LOGGER.debug(json.loads(text))
 
 
     def test_delete_domain2(self):
@@ -73,9 +74,9 @@ class TestDomainController1(BaseTestCase):
         url="http://0.0.0.0:8080/domain/deleteDomain?domainName=ll"
         headers = {"Content-Type": "application/json"}
         response = requests.delete(url, headers=headers)  # 发送请求
-        print("response is : {}".format(response))
+        LOGGER.debug("response is : {}".format(response))
         text = response.text
-        print(json.loads(text))
+        LOGGER.debug(json.loads(text))
 
 
     def test_query_domain(self):

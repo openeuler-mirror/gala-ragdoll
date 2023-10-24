@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
@@ -30,7 +31,7 @@ class TestHostController1(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_add_host_in_domain1 response is : {}".format(response.data))
+        LOGGER.debug("test_add_host_in_domain1 response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -50,7 +51,7 @@ class TestHostController1(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_add_host_in_domain2 response is : {}".format(response.data))
+        LOGGER.debug("test_add_host_in_domain2 response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -66,7 +67,7 @@ class TestHostController1(BaseTestCase):
             method='DELETE',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_delete_host_in_domain response is : {}".format(response.data))
+        LOGGER.debug("test_delete_host_in_domain response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -83,7 +84,7 @@ class TestHostController1(BaseTestCase):
             method='DELETE',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_delete_host_in_domain2 response is : {}".format(response.data))
+        LOGGER.debug("test_delete_host_in_domain2 response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -98,7 +99,7 @@ class TestHostController1(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_get_host_by_domain_name response is : {}".format(response.data))
+        LOGGER.debug("test_get_host_by_domain_name response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

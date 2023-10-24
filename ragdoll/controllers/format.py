@@ -8,6 +8,7 @@ import configparser
 import ast
 import requests
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_file import ConfFile
 from ragdoll.models.conf_files import ConfFiles
@@ -414,7 +415,7 @@ class Format(object):
         code_num = 200
         base_resp = None
         # get the host info in domain
-        print("############## get the host in domain ##############")
+        LOGGER.debug("############## get the host in domain ##############")
         host_ids = Format.get_hostid_list_by_domain(domain)
         if not host_ids:
             code_num = 404
@@ -423,7 +424,7 @@ class Format(object):
             return base_rsp, code_num
 
         # get the managent conf in domain
-        print("############## get the managent conf in domain ##############")
+        LOGGER.debug("############## get the managent conf in domain ##############")
         man_conf_res_text = Format.get_manageconf_by_domain(domain)
         manage_confs = man_conf_res_text.get("conf_files")
 

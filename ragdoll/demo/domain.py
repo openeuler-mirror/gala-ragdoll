@@ -1,6 +1,7 @@
 import requests
 import json
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.domain import Domain
 from ragdoll.demo.conf import server_port
 from ragdoll.encoder import JSONEncoder
@@ -11,7 +12,7 @@ class DomainManage(object):
         domain_name_list = args.domain_name
         priority_list = args.priority
         if len(domain_name_list) != len(priority_list):
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
 
         data = []
@@ -24,9 +25,9 @@ class DomainManage(object):
         try:
             response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
             if response.text is not None:
-                print(json.loads(response.text).get("msg"))
+                LOGGER.debug(json.loads(response.text).get("msg"))
         except Exception as p:
-            print(str(p))
+            LOGGER.error(str(p))
         
         return
     
@@ -36,7 +37,7 @@ class DomainManage(object):
         for domain_name in domain_name_list:
             url = "http://0.0.0.0:{}/domain/deleteDomain?domainName={}".format(server_port, domain_name)
             response = requests.delete(url, headers=headers)
-            print(json.loads(response.text).get("msg"))
+            LOGGER.debug(json.loads(response.text).get("msg"))
         return
     
     def domain_query(self, args):
@@ -51,7 +52,7 @@ class DomainManage(object):
                 for i in json.loads(response.text):
                     _domain_info.append(i.get("domainName"))
             domain_info = "The following configuration domains are managed:{}.".format(_domain_info)
-            print(domain_info)
+            LOGGER.debug(domain_info)
         else:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         return

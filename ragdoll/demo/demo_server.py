@@ -1,6 +1,7 @@
 import connexion
 
 from ragdoll.models.conf_host import ConfHost
+from ragdoll.log.log import LOGGER
 
 def _read_file(path):
     info = ""
@@ -8,7 +9,7 @@ def _read_file(path):
         with open(path, "r") as f:
             info = f.read()
     except IOError as error:
-        print(error)
+        LOGGER.error(error)
     return info
 
 def collect_conf(body=None):
@@ -65,7 +66,7 @@ def _write_file(path, content):
             status = True
     except IOError as error:
         error_info = error
-        print(error)
+        LOGGER.error(error)
     return status, error_info
 
 def sync_conf(body=None):

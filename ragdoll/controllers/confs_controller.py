@@ -5,6 +5,7 @@ import requests
 from flask import json
 from io import StringIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_host import ConfHost  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
@@ -56,14 +57,14 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
         return base_rsp, code_num
 
     # get manage confs in domain
-    print("############## get the confs in domain ##############")
+    LOGGER.debug("############## get the confs in domain ##############")
     manage_confs = []
     base_rsp, code_num = Format._get_domain_conf(domain, manage_confs)
     if code_num != 200:
         return base_rsp, code_num
 
     # get real conf in host
-    print("############## query the real conf ##############")
+    LOGGER.debug("############## query the real conf ##############")
     host_ids = Format.get_hostid_list_by_domain(domain)
     real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids)
 
@@ -100,7 +101,7 @@ def query_excepted_confs():  # noqa: E501
     :rtype: List[ExceptedConfInfo]
     """
     # get all domain
-    print("############## get all domain ##############")
+    LOGGER.debug("############## get all domain ##############")
     cmd = "ls {}".format(TARGETDIR)
     git_tools = GitTools()
     res_domain = git_tools.run_shell_return_output(cmd).decode().split()
@@ -140,9 +141,9 @@ def query_excepted_confs():  # noqa: E501
                     expected_conf_lists.conf_base_infos.append(conf_base_info)
         all_domain_expected_files.append(expected_conf_lists)
 
-    print("########################## expetedConfInfo ####################")
-    print("all_domain_expected_files is : {}".format(all_domain_expected_files))
-    print("########################## expetedConfInfo  end ####################")
+    LOGGER.debug("########################## expetedConfInfo ####################")
+    LOGGER.debug("all_domain_expected_files is : {}".format(all_domain_expected_files))
+    LOGGER.debug("########################## expetedConfInfo  end ####################")
 
     if len(all_domain_expected_files) == 0:
         code_num = 400
@@ -184,7 +185,7 @@ def query_real_confs(body=None):  # noqa: E501
 
     # check whether the host is configured in the domain
     is_host_list_exist = Format.isHostInDomain(domain)
-    print("is_host_list_exist is : {}".format(is_host_list_exist))
+    LOGGER.debug("is_host_list_exist is : {}".format(is_host_list_exist))
     if not is_host_list_exist:
         code_num = 400
         base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
@@ -200,7 +201,7 @@ def query_real_confs(body=None):  # noqa: E501
         host_tool = HostTools()
         exist_host, failed_host = host_tool.getHostExistStatus(domain, host_list)
     else:
-        print("############## get the host in domain ##############")
+        LOGGER.debug("############## get the host in domain ##############")
         res_text = Format.get_hostinfo_by_domain(domain)
         if len(res_text) == 0:
             code_num = 404
@@ -214,7 +215,7 @@ def query_real_confs(body=None):  # noqa: E501
         return base_rsp, code_num
 
     # get the management conf in domain
-    print("############## get the management conf in domain ##############")
+    LOGGER.debug("############## get the management conf in domain ##############")
     res = Format.get_realconf_by_domain_and_host(domain, exist_host)
     if len(res) == 0:
         code_num = 400
@@ -279,7 +280,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
             temp_host = {}
             temp_host["hostId"] = d_host.get("host_id")
             exist_host.append(temp_host)
-    print("exist_host is : {}".format(exist_host))
+    LOGGER.debug("exist_host is : {}".format(exist_host))
 
     if len(exist_host) == 0:
         code_num = 400
@@ -288,11 +289,11 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
         return base_rsp, code_num
 
     # get the management conf in domain
-    print("############## get management conf in domain ##############")
+    LOGGER.debug("############## get management conf in domain ##############")
     man_conf_res_text = Format.get_manageconf_by_domain(domain)
-    print("man_conf_res_text is : {}".format(man_conf_res_text))
+    LOGGER.debug("man_conf_res_text is : {}".format(man_conf_res_text))
     manage_confs = man_conf_res_text.get("conf_files")
-    print("manage_confs is : {}".format(manage_confs))
+    LOGGER.debug("manage_confs is : {}".format(manage_confs))
 
     # Deserialize and reverse parse the expected configuration
     conf_tools = ConfTools()
