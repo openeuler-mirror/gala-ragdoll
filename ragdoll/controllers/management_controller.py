@@ -109,10 +109,10 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     # content is empty
     if len(contents_list_null) > 0:
         # get the real conf in host
-        print("############## get the real conf in host ##############")
+        LOGGER.debug("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
-        print("contents_list_null is : {}".format(contents_list_null))
+        LOGGER.debug("contents_list_null is : {}".format(contents_list_null))
         exist_host = dict()
         for d_conf in contents_list_null:
             host_id = int(d_conf.host_id)
@@ -186,9 +186,9 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
-    print("*******************************************")
-    print("successConf is : {}".format(successConf))
-    print("failedConf is : {}".format(failedConf))
+    LOGGER.debug("*******************************************")
+    LOGGER.debug("successConf is : {}".format(successConf))
+    LOGGER.debug("failedConf is : {}".format(failedConf))
     if len(successConf) == 0:
         codeNum = 400
         codeString = "All configurations failed to be added."
@@ -260,7 +260,7 @@ def upload_management_confs_in_domain(file=None):  # noqa: E501
             content = file.read().decode("utf-8")
             line_content = content + "\n"
         except OSError as err:
-            LOGGER.info("OS error: {}".format(err))
+            LOGGER.error("OS error: {}".format(err))
             codeNum = 500
             base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
             return base_rsp, codeNum
@@ -287,9 +287,9 @@ def upload_management_confs_in_domain(file=None):  # noqa: E501
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
-    print("*******************************************")
-    print("successConf is : {}".format(successConf))
-    print("failedConf is : {}".format(failedConf))
+    LOGGER.debug("*******************************************")
+    LOGGER.debug("successConf is : {}".format(successConf))
+    LOGGER.debug("failedConf is : {}".format(failedConf))
     if len(successConf) == 0:
         codeNum = 400
         codeString = "All configurations failed to be added."
@@ -349,7 +349,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
     # (1)xpath path
     # (2) configuration item
     domain_path = os.path.join(TARGETDIR, domain)
-    print("conf_files is : {}".format(conf_files))
+    LOGGER.debug("conf_files is : {}".format(conf_files))
 
     yang_modules = YangModule()
     module_lists = yang_modules.module_list
@@ -358,15 +358,15 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         return base_rsp
 
     file_path_list = yang_modules.getFilePathInModdule(module_lists)
-    print("module_lists is : {}".format(module_lists))
+    LOGGER.debug("module_lists is : {}".format(module_lists))
     for conf in conf_files:
         module = yang_modules.getModuleByFilePath(conf.file_path)
         features = yang_modules.getFeatureInModule(module)
         features_path = os.path.join(domain_path, "/".join(features))
-        print("domain_path is : {}".format(domain_path))
+        LOGGER.debug("domain_path is : {}".format(domain_path))
 
         if os.path.isfile(features_path):
-            print("it's a normal file")
+            LOGGER.debug("it's a normal file")
             try:
                 os.remove(features_path)
             except OSError as ex:
@@ -450,7 +450,7 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
 
                 conf = ConfFile(file_path=file_path, contents=contents)
                 expected_conf_lists.conf_files.append(conf)
-    print("expected_conf_lists is :{}".format(expected_conf_lists))
+    LOGGER.debug("expected_conf_lists is :{}".format(expected_conf_lists))
 
     if len(expected_conf_lists.domain_name) > 0:
         base_rsp = BaseResponse(200, "Get management configuration items and expected " +
@@ -476,7 +476,7 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
 
     #  check whether the domain exists
     domain = body.domain_name
-    print("body is : {}".format(body))
+    LOGGER.debug("body is : {}".format(body))
 
     # check the input domain
     checkRes = Format.domainCheck(domain)
@@ -490,16 +490,16 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(400, "The current domain does not exist")
         return base_rsp
 
-    # Check whether path is empty in advance. If path is empty, the configuration in the
+    # Check whether path is empty in advance. If path is empty, the configuration in the 
     # entire domain is queried. Otherwise, the historical records of the specified file are queried.
     conf_files = body.conf_files
-    print("conf_files is : {}".format(conf_files))
-    print("conf_files's type is : {}".format(type(conf_files)))
+    LOGGER.debug("conf_files is : {}".format(conf_files))
+    LOGGER.debug("conf_files's type is : {}".format(type(conf_files)))
     conf_files_list = []
     if conf_files:
         for d_conf in conf_files:
-            print("d_conf is : {}".format(d_conf))
-            print("d_conf type is : {}".format(type(d_conf)))
+            LOGGER.debug("d_conf is : {}".format(d_conf))
+            LOGGER.debug("d_conf type is : {}".format(type(d_conf)))
             conf_files_list.append(d_conf.file_path)
     success_conf = []
     failed_conf = []
@@ -533,9 +533,9 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
                                               change_log=gitMessage)
                 expected_conf_lists.conf_base_infos.append(conf_base_info)
 
-    print("########################## expetedConfInfo ####################")
-    print("expected_conf_lists is : {}".format(expected_conf_lists))
-    print("########################## expetedConfInfo  end ####################")
+    LOGGER.debug("########################## expetedConfInfo ####################")
+    LOGGER.debug("expected_conf_lists is : {}".format(expected_conf_lists))
+    LOGGER.debug("########################## expetedConfInfo  end ####################")
 
     if len(success_conf) == 0:
         codeNum = 500

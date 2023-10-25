@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_host import ConfHost  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
@@ -30,7 +31,7 @@ class TestConfsController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("response is : {}".format(response.data.decode('utf-8')))
+        LOGGER.debug("response is : {}".format(response.data.decode('utf-8')))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -43,7 +44,7 @@ class TestConfsController(BaseTestCase):
             '/confs/queryExpectedConfs',
             method='POST')
 
-        print("response is : {}".format(response.data.decode('utf-8')))
+        LOGGER.debug("response is : {}".format(response.data.decode('utf-8')))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -65,7 +66,7 @@ class TestConfsController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_query_real_confs response is : {}".format(response.data))
+        LOGGER.debug("test_query_real_confs response is : {}".format(response.data))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -85,7 +86,7 @@ class TestConfsController(BaseTestCase):
             method='PUT',
             data=json.dumps(body),
             content_type='application/json')
-        print("test_sync_conf_to_host_from_domain response is : {}".format(response.data.decode('utf-8')))
+        LOGGER.debug("test_sync_conf_to_host_from_domain response is : {}".format(response.data.decode('utf-8')))
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

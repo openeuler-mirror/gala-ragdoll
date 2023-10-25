@@ -2,6 +2,8 @@ import os
 import configparser
 import ast
 
+from ragdoll.log.log import LOGGER
+
 CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class HostTools(object):
@@ -75,7 +77,7 @@ class HostTools(object):
         res = []
         for d_host in domainHost:
             hostId = int(d_host.get('host_id'))
-            print("the host Id is : {}".format(hostId))
+            LOGGER.debug("the host Id is : {}".format(hostId))
             d_host = {}
             d_host["hostId"] = hostId
             res.append(hostId)

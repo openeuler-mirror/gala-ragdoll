@@ -3,6 +3,8 @@ import os
 import sys
 import importlib
 import operator
+
+from ragdoll.log.log import LOGGER
 from ragdoll.utils.git_tools import GitTools
 
 PROJECTNAME = "gala-ragdoll"
@@ -14,7 +16,7 @@ class YangModule(object):
         self._target_dir = "yang_modules"
         self._ctx = libyang.Context()
         self._yang_dir = self.get_yang_path_in_ragdoll()
-        print("_yang_dir is : {}".format(self._yang_dir))
+        LOGGER.debug("_yang_dir is : {}".format(self._yang_dir))
         self._module_list = self.loadYangModules()
 
     @property
@@ -62,7 +64,7 @@ class YangModule(object):
         desc: get the path of the yang project in 
         """
         paths = self._cwd_dir.split("/")
-        print("paths is : {}".format(paths))
+        LOGGER.debug("paths is : {}".format(paths))
         yang_dir = ""
         if PROJECTNAME in paths:
             yang_path = ""
@@ -249,8 +251,8 @@ class YangModule(object):
         """
         res = {}
         for d_mod in modules:
-            print("d_mod is : {}".format(d_mod))
-            print("d_mod's type is : {}".format(type(d_mod)))
+            LOGGER.debug("d_mod is : {}".format(d_mod))
+            LOGGER.debug("d_mod's type is : {}".format(type(d_mod)))
             feature_list = self.getFeatureInModule(d_mod)
             module_name = d_mod.name()
             xpath = ""

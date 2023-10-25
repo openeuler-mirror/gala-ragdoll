@@ -1,6 +1,7 @@
 import requests
 import json
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.conf import Conf
@@ -18,7 +19,7 @@ class ConfManage(object):
         contents_list = args.contents
         host_id_list = args.host_id
         if not domain_name or not file_path_list:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         conf_file = []
@@ -31,7 +32,7 @@ class ConfManage(object):
                 conf = Conf(file_path=file_path_list[i], host_id=host_id_list[i])
                 conf_file.append(conf)
         else:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
 
         data = Confs(domain_name=domain_name, conf_files=conf_file)
@@ -39,13 +40,13 @@ class ConfManage(object):
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
-        print(json.loads(response.text).get("msg"))
+        LOGGER.debug(json.loads(response.text).get("msg"))
         return
 
     def conf_query(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
 
         data = DomainName(domain_name=domain_name)
@@ -54,16 +55,16 @@ class ConfManage(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
         if response.status_code != 200:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         else:
-            print("The managed configurations in the domain[{}] is:{}".format(domain_name, json.loads(response.text).get("confFiles")))
+            LOGGER.debug("The managed configurations in the domain[{}] is:{}".format(domain_name, json.loads(response.text).get("confFiles")))
         return
 
     def conf_delete(self, args):
         domain_name = args.domain_name
         file_path_list = args.file_path
         if not domain_name or not file_path_list:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         conf_files = []
@@ -77,16 +78,16 @@ class ConfManage(object):
         response = requests.delete(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
         if response.status_code != 200:
-            print("Fail to delete {} in {}.".format(file_path_list, domain_name))
+            LOGGER.warning("Fail to delete {} in {}.".format(file_path_list, domain_name))
         else:
-            print(json.loads(response.text).get("msg"))
+            LOGGER.debug(json.loads(response.text).get("msg"))
         return
 
     def conf_changelog(self, args):
         domain_name = args.domain_name
         file_path_list = args.file_path
         if not domain_name or not file_path_list:
-            print("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error!\n")
             return
         
         conf_files = []
@@ -100,12 +101,12 @@ class ConfManage(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
         
         if not json.loads(response.text).get("confBaseInfos"):
-            print(json.loads(response.text).get("msg"))
+            LOGGER.warning(json.loads(response.text).get("msg"))
         else:
             changelog = []
             for i in json.loads(response.text).get("confBaseInfos"):
                 changelog.append(i)
-            print("The changelog of domain [{}] is:{}".format(domain_name, changelog))
+            LOGGER.debug("The changelog of domain [{}] is:{}".format(domain_name, changelog))
         return
 
 

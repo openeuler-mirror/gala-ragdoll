@@ -8,6 +8,7 @@ import subprocess
 from flask import json
 from six import BytesIO
 
+from ragdoll.log.log import LOGGER
 from ragdoll.test import BaseTestCase
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.test.test_conf_model import TestConfModel
@@ -22,7 +23,7 @@ class TestReverseAnaly():
         """
         desc: create the object with the conf_info of the input file.
         """
-        print("############ test: create_conf_model_with_conf_info ############")
+        LOGGER.debug("############ test: create_conf_model_with_conf_info ############")
         test_analy = TestConfModel(self._module, self._file)
         yang_module, conf_type, _conf_model = test_analy.create_config_model_by_yang_module()
         conf_model = test_analy.check_config_model(yang_module, conf_type, _conf_model)
@@ -32,13 +33,13 @@ class TestReverseAnaly():
         """
         desc: check the deserialization from conf_model
         """
-        print("############ test: check_reverse_conf_model ############")
+        LOGGER.debug("############ test: check_reverse_conf_model ############")
         conf_info = d_object.write_conf()
         if conf_info:
-            print("The conf_info is : {}".format(conf_info))
-            print("The object is successfully converted to conf_info!")
+            LOGGER.debug("The conf_info is : {}".format(conf_info))
+            LOGGER.debug("The object is successfully converted to conf_info!")
         else:
-            print("The object is failed converted to conf_info, please check the analy script!")
+            LOGGER.warning("The object is failed converted to conf_info, please check the analy script!")
         return conf_info
 
 def parse_command_line():
