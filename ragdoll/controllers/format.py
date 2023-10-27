@@ -163,12 +163,12 @@ class Format(object):
     def is_exists_file(d_file):
         if os.path.exists(d_file):
             return True
-        if not os.path.exists(d_file):
-            if os.path.islink(d_file):
-                logging.debug("file: %s is a symlink, skipped!", d_file)
-                return False
-            logging.error("file: %s does not exist.", d_file)
-            return False
+        elif os.path.islink(d_file):
+            logging.debug("File: %s is a symlink, skipped!", d_file)
+        else:
+            logging.error("File: %s does not exist.", d_file)
+        
+        return False
 
     @staticmethod
     def get_file_content_by_readlines(d_file):
