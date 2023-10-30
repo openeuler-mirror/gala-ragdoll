@@ -32,7 +32,7 @@ class FstabConfig(BaseHandlerConfig):
         for line in conf_info_list:
             if line.strip() == '' or line.strip()[0] in '#':
                 continue
-            line_list = re.split("\s+", line)
+            line_list = re.split("\s+", line.strip())
             if len(line_list) != FSTAB_COLUMN_NUM:
                 error_conf = True
                 break

@@ -58,8 +58,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
     # get manage confs in domain
     LOGGER.debug("############## get the confs in domain ##############")
-    manage_confs = []
-    base_rsp, code_num = Format._get_domain_conf(domain, manage_confs)
+    base_rsp, code_num, manage_confs = Format._get_domain_conf(domain)
     if code_num != 200:
         return base_rsp, code_num
 
