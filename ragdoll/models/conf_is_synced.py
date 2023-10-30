@@ -7,6 +7,7 @@ from typing import List, Dict  # noqa: F401
 
 from ragdoll.models.base_model_ import Model
 from ragdoll import util
+from ragdoll.models.single_config import SingleConfig
 
 
 class ConfIsSynced(Model):
@@ -15,7 +16,8 @@ class ConfIsSynced(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, file_path: str=None, is_synced: str=None):  # noqa: E501
+    def __init__(self, file_path: str = None, is_synced: str = None,
+                 single_conf: List[SingleConfig] = None):  # noqa: E501
         """ConfIsSynced - a model defined in Swagger
 
         :param file_path: The xpath of this configuration item.  # noqa: E501
@@ -25,16 +27,19 @@ class ConfIsSynced(Model):
         """
         self.swagger_types = {
             'file_path': str,
-            'is_synced': str
+            'is_synced': str,
+            'single_conf': List[SingleConfig]
         }
 
         self.attribute_map = {
             'file_path': 'file_path',
-            'is_synced': 'isSynced'
+            'is_synced': 'isSynced',
+            'single_conf': 'singleConf'
         }
 
         self._path = file_path
         self._is_synced = is_synced
+        self._single_conf = single_conf
 
     @classmethod
     def from_dict(cls, dikt) -> 'ConfIsSynced':
@@ -95,3 +100,24 @@ class ConfIsSynced(Model):
             )
 
         self._is_synced = is_synced
+
+    @property
+    def single_conf(self) -> List[SingleConfig]:
+        """Gets the single_conf of this ConfIsSynced.
+
+
+        :return: The single_conf of this ConfIsSynced.
+        :rtype: List[SingleConfig]
+        """
+        return self._single_conf
+
+    @single_conf.setter
+    def single_conf(self, single_conf: List[SingleConfig]):
+        """Sets the single_conf of this ConfIsSynced.
+
+
+        :param single_conf: the single_conf of this ConfIsSynced.
+        :type single_conf: List[SingleConfig]
+        """
+
+        self._single_conf = single_conf

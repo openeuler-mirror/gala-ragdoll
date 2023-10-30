@@ -1,34 +1,23 @@
 import connexion
-import six
 import os
-import requests
-from flask import json
-from io import StringIO
 
 from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_host import ConfHost  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.excepted_conf_info import ExceptedConfInfo  # noqa: E501
-from ragdoll.models.expected_conf import ExpectedConf  # noqa: E501
-from ragdoll.models.real_conf_info import RealConfInfo  # noqa: E501
 from ragdoll.models.sync_req import SyncReq
 from ragdoll.models.sync_status import SyncStatus  # noqa: E501
 from ragdoll.models.conf_base_info import ConfBaseInfo
 from ragdoll.models.conf_is_synced import ConfIsSynced
-from ragdoll.models.conf_synced_res import ConfSyncedRes
-from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.host_sync_result import HostSyncResult
-from ragdoll.models.host_sync_status import HostSyncStatus
 
-from ragdoll.models.real_conf import RealConf
 from ragdoll.controllers.format import Format
 from ragdoll.utils.git_tools import GitTools
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
-from ragdoll import util
 from ragdoll.const.conf_files import yang_conf_list
 
 TARGETDIR = GitTools().target_dir
@@ -67,7 +56,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     host_ids = Format.get_hostid_list_by_domain(domain)
     real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids)
 
-    # compare manage conf with real conf 
+    # compare manage conf with real conf
     sync_status = Format.diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs)
 
     # deal with not found files
@@ -205,7 +194,7 @@ def query_real_confs(body=None):  # noqa: E501
         if len(res_text) == 0:
             code_num = 404
             base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
-                                "Please add host information to the domain.")
+                                    "Please add host information to the domain.")
 
     if len(exist_host) == 0 or len(failed_host) == len(host_list):
         code_num = 400
@@ -261,11 +250,11 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
         return base_rsp, code_num
 
     # get the management host in domain
-    res_host_text = Format.get_hostinfo_by_domain(domain) 
+    res_host_text = Format.get_hostinfo_by_domain(domain)
     if len(res_host_text) == 0:
         code_num = 404
         base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
-                            "Please add host information to the domain.")
+                                "Please add host information to the domain.")
     # Check whether the host is in the managed host list
     exist_host = []
     if len(host_sync_confs) > 0:
@@ -304,25 +293,9 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
         for d_man_conf in manage_confs:
             file_path = d_man_conf.get("file_path").split(":")[-1]
             if file_path in sync_confs:
-                file_path = d_man_conf.get("file_path").split(":")[-1]
                 contents = d_man_conf.get("contents")
                 object_parse = ObjectParse()
-                content = object_parse.parse_json_to_conf(file_path, contents)
-                # Configuration to the host
-                sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
-                headers = {"Content-Type": "application/json"}
-                data = {"host_id": host_id, "file_path": file_path, "content": content}
-                sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
-
-                resp_code = json.loads(sync_response.text).get('code')
-                resp = json.loads(sync_response.text).get('data').get('resp')
-                conf_sync_res = ConfSyncedRes(file_path=file_path,
-                                              result="")
-                if resp_code == "200" and resp.get('sync_result') is True:
-                    conf_sync_res.result = "SUCCESS"
-                else:
-                    conf_sync_res.result = "FAILED"
-                host_sync_result.sync_result.append(conf_sync_res)
+                Format.deal_sync_res(conf_tools, contents, file_path, host_id, host_sync_result, object_parse)
         sync_res.append(host_sync_result)
 
     return sync_res

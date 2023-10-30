@@ -1,24 +1,20 @@
+import io
+
 import connexion
-import six
 import os
-import shutil
 import json
 import requests
 
+from ragdoll.const.conf_handler_const import DIRECTORY_FILE_PATH_LIST
 from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
-from ragdoll.models.conf import Conf
 from ragdoll.models.confs import Confs
 from ragdoll.models.conf_file import ConfFile
 from ragdoll.models.conf_files import ConfFiles
-from ragdoll.models.git_log_message import GitLogMessage
 from ragdoll.models.conf_base_info import ConfBaseInfo
-from ragdoll.models.domain_manage_conf import DomainManageConf  # noqa: E501
 from ragdoll.models.excepted_conf_info import ExceptedConfInfo
 from ragdoll.models.domain_name import DomainName  # noqa: E501
-from ragdoll.models.manage_conf import ManageConf
 from ragdoll.models.manage_confs import ManageConfs
-from ragdoll import util
 from ragdoll.controllers.format import Format
 from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.git_tools import GitTools
@@ -117,11 +113,29 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         for d_conf in contents_list_null:
             host_id = int(d_conf.host_id)
             if host_id in exist_host:
-                exist_host[host_id].append(d_conf.file_path)
+                if d_conf.file_path not in DIRECTORY_FILE_PATH_LIST:
+                    exist_host[host_id].append(d_conf.file_path)
+                else:
+                    codeNum, codeString, file_paths = object_parse.get_pam_files(d_conf, host_id)
+                    if len(file_paths) == 0:
+                        base_rsp = BaseResponse(codeNum, codeString)
+                        return base_rsp, codeNum
+                    else:
+                        for file_path in file_paths:
+                            exist_host[host_id].append(file_path)
             else:
-                conf_list = list()
-                conf_list.append(d_conf.file_path)
-                exist_host[host_id] = conf_list
+                if d_conf.file_path not in DIRECTORY_FILE_PATH_LIST:
+                    conf_list = list()
+                    conf_list.append(d_conf.file_path)
+                    exist_host[host_id] = conf_list
+                else:
+                    codeNum, codeString, file_paths = object_parse.get_pam_files(d_conf, host_id)
+                    if len(file_paths) == 0:
+                        base_rsp = BaseResponse(codeNum, codeString)
+                        return base_rsp, codeNum
+                    else:
+                        exist_host[host_id] = file_paths
+
         for k, v in exist_host.items():
             confs = dict()
             confs["host_id"] = k
@@ -154,6 +168,8 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
 
+        directory_d_file = []
+        directory_d_files = {}
         for d_res in reps:
             failedlist = d_res.get("fail_files")
             if len(failedlist) > 0:
@@ -162,20 +178,36 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 continue
             d_res_infos = d_res.get("infos")
             for d_file in d_res_infos:
-                file_path = d_file.get("path")
-                content = d_file.get("content")
-                content_string = object_parse.parse_conf_to_json(file_path, content)
-                # create the file and expected value in domain
+                for dir_path in DIRECTORY_FILE_PATH_LIST:
+                    if str(d_file.get("path")).find(dir_path) == -1:
+                        file_path = d_file.get("path")
+                        content = d_file.get("content")
+                        content_string = object_parse.parse_conf_to_json(file_path, content)
+                        # create the file and expected value in domain
+                        if not content_string or not json.loads(content_string):
+                            failedConf.append(file_path)
+                        else:
+                            feature_path = yang_module.get_feature_by_real_path(domain, file_path)
+                            result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
+                            if result:
+                                successConf.append(file_path)
+                            else:
+                                failedConf.append(file_path)
+                    else:
+                        directory_d_file.append(d_file)
+                        directory_d_files[dir_path] = directory_d_file
+        if len(directory_d_files) > 0:
+            for dir_path, directory_d_file in directory_d_files.items():
+                content_string = object_parse.parse_dir_conf_to_json(dir_path, directory_d_file)
                 if not content_string or not json.loads(content_string):
-                    failedConf.append(file_path)
+                    failedConf.append(dir_path)
                 else:
-                    feature_path = yang_module.get_feature_by_real_path(domain, file_path)
+                    feature_path = yang_module.get_feature_by_real_path(domain, dir_path)
                     result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
                     if result:
-                        successConf.append(file_path)
+                        successConf.append(dir_path)
                     else:
-                        failedConf.append(file_path)
-
+                        failedConf.append(dir_path)
     # git commit message
     if len(successConf) > 0:
         git_tools = GitTools()
@@ -204,7 +236,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     return base_rsp, codeNum
 
 
-def upload_management_confs_in_domain(file=None):  # noqa: E501
+def upload_management_confs_in_domain():  # noqa: E501
     """upload management configuration items and expected values in the domain
 
     upload management configuration items and expected values in the domain # noqa: E501
@@ -214,6 +246,7 @@ def upload_management_confs_in_domain(file=None):  # noqa: E501
 
     :rtype: BaseResponse
     """
+    file = connexion.request.files['file']
     filePath = connexion.request.form.get("filePath")
     domainName = connexion.request.form.get("domainName")
 
@@ -257,12 +290,24 @@ def upload_management_confs_in_domain(file=None):  # noqa: E501
                                     "please check the input parameters.")
             return base_rsp, codeNum
         try:
-            content = file.read().decode("utf-8")
-            line_content = content + "\n"
+            file_bytes = file.read()
+            if len(file_bytes) > 1024 * 1024:
+                codeNum = 400
+                base_rsp = BaseResponse(codeNum, "The size of the uploaded file must be less than 1MB")
+                return base_rsp, codeNum
+            byte_stream = io.BytesIO(file_bytes)
+
+            # Read the contents of the byte stream
+            line_content = byte_stream.read().decode("UTF-8")
         except OSError as err:
             LOGGER.error("OS error: {}".format(err))
             codeNum = 500
             base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
+            return base_rsp, codeNum
+        except Exception as ex:
+            LOGGER.error("OS error: {}".format(ex))
+            codeNum = 500
+            base_rsp = BaseResponse(codeNum, "read file error: {0}".format(ex))
             return base_rsp, codeNum
 
         content_string = object_parse.parse_conf_to_json(filePath, line_content)
@@ -490,7 +535,7 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(400, "The current domain does not exist")
         return base_rsp
 
-    # Check whether path is empty in advance. If path is empty, the configuration in the 
+    # Check whether path is empty in advance. If path is empty, the configuration in the
     # entire domain is queried. Otherwise, the historical records of the specified file are queried.
     conf_files = body.conf_files
     LOGGER.debug("conf_files is : {}".format(conf_files))

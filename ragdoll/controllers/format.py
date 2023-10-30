@@ -5,8 +5,11 @@ import json
 import configparser
 import ast
 import requests
-
 from ragdoll.log.log import LOGGER
+
+from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED, CONFIG, \
+    DIRECTORY_FILE_PATH_LIST
+from ragdoll.models import ConfSyncedRes
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_file import ConfFile
 from ragdoll.models.conf_files import ConfFiles
@@ -14,11 +17,10 @@ from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.real_conf_info import RealConfInfo  # noqa: E501
 from ragdoll.models.conf_is_synced import ConfIsSynced
 from ragdoll.models.host_sync_status import HostSyncStatus
+from ragdoll.models.single_config import SingleConfig
 from ragdoll.models.sync_status import SyncStatus  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.utils.host_tools import HostTools
-
-CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 
 class Format(object):
@@ -159,11 +161,10 @@ class Format(object):
     def is_exists_file(d_file):
         if os.path.exists(d_file):
             return True
-        elif os.path.islink(d_file):
-            logging.debug("File: %s is a symlink, skipped!", d_file)
-        else:
-            logging.error("File: %s does not exist.", d_file)
-
+        if os.path.islink(d_file):
+            logging.debug("file: %s is a symlink, skipped!", d_file)
+            return False
+        logging.error("file: %s does not exist.", d_file)
         return False
 
     @staticmethod
@@ -301,11 +302,17 @@ class Format(object):
         # get the real conf in host
         conf_list = []
         from ragdoll.utils.conf_tools import ConfTools
+        from ragdoll.utils.object_parse import ObjectParse
         conf_tools = ConfTools()
-        port = conf_tools.load_port_by_conf()
         for d_conf in conf_files.get("conf_files"):
             file_path = d_conf.get("file_path").split(":")[-1]
-            conf_list.append(file_path)
+            if file_path not in DIRECTORY_FILE_PATH_LIST:
+                conf_list.append(file_path)
+            else:
+                d_conf_cs = d_conf.get("contents")
+                d_conf_contents = json.loads(d_conf_cs)
+                for d_conf_key, d_conf_value in d_conf_contents.items():
+                    conf_list.append(d_conf_key)
         logging.debug("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
@@ -328,8 +335,7 @@ class Format(object):
 
         success_lists = {}
         failed_lists = {}
-        from ragdoll.utils.object_parse import ObjectParse
-        import connexion
+
         for d_res in resp:
             d_host_id = d_res.get("host_id")
             fail_files = d_res.get("fail_files")
@@ -349,26 +355,62 @@ class Format(object):
                                           host_id=d_host_id,
                                           conf_base_infos=[])
             d_res_infos = d_res.get("infos")
+
+            real_directory_conf = {}
+            real_directory_conf_list = {}
+            object_parse = ObjectParse()
             for d_file in d_res_infos:
-                file_path = d_file.get("path")
                 content = d_file.get("content")
-                object_parse = ObjectParse()
-                content_string = object_parse.parse_conf_to_json(file_path, content)
+                file_path = d_file.get("path")
                 file_atrr = d_file.get("file_attr").get("mode")
                 file_owner = "({}, {})".format(d_file.get("file_attr").get("group"),
                                                d_file.get("file_attr").get("owner"))
-                real_conf_base_info = RealconfBaseInfo(path=file_path,
-                                                       file_path=file_path,
-                                                       file_attr=file_atrr,
-                                                       file_owner=file_owner,
-                                                       conf_contens=content_string)
-                read_conf_info.conf_base_infos.append(real_conf_base_info.to_dict())
+                directory_flag = False
+                for dir_path in DIRECTORY_FILE_PATH_LIST:
+                    if str(file_path).find(dir_path) != -1:
+                        if real_directory_conf.get(dir_path) is None:
+                            real_directory_conf_list[dir_path] = list()
+                            real_directory_conf[dir_path] = RealconfBaseInfo(file_path=dir_path,
+                                                                             file_attr=file_atrr,
+                                                                             file_owner=file_owner,
+                                                                             conf_contens="")
+
+                        directory_conf = dict()
+                        directory_conf["path"] = file_path
+                        directory_conf["content"] = content
+                        real_directory_conf_list.get(dir_path).append(directory_conf)
+                        directory_flag = True
+                        break
+                if not directory_flag:
+                    Format.deal_conf_list_content(content, d_file, file_path, object_parse, read_conf_info)
                 if len(fail_files) > 0:
                     failed_lists.get("success_conf").append(file_path)
                 else:
                     success_lists.get("success_conf").append(file_path)
-            res.append(read_conf_info.to_dict())
+
+            for dir_path, dir_value in real_directory_conf_list.items():
+                content_string = object_parse.parse_directory_single_conf_to_json(dir_value,
+                                                                                  real_directory_conf[
+                                                                                      dir_path].file_path)
+                real_directory_conf[dir_path].conf_contens = content_string
+                real_conf_base_info = real_directory_conf.get(dir_path)
+
+                read_conf_info.conf_base_infos.append(real_conf_base_info)
+            res.append(read_conf_info)
         return res
+
+    @staticmethod
+    def deal_conf_list_content(content, d_file, file_path, object_parse, read_conf_info):
+        content_string = object_parse.parse_conf_to_json(file_path, content)
+        file_atrr = d_file.get("file_attr").get("mode")
+        file_owner = "({}, {})".format(d_file.get("file_attr").get("group"),
+                                       d_file.get("file_attr").get("owner"))
+        real_conf_base_info = RealconfBaseInfo(path=file_path,
+                                               file_path=file_path,
+                                               file_attr=file_atrr,
+                                               file_owner=file_owner,
+                                               conf_contens=content_string)
+        read_conf_info.conf_base_infos.append(real_conf_base_info)
 
     @staticmethod
     def check_domain_param(domain):
@@ -415,9 +457,9 @@ class Format(object):
         host_ids = Format.get_hostid_list_by_domain(domain)
         if not host_ids:
             code_num = 404
-            base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
-                                    "Please add host information to the domain.")
-            return base_rsp, code_num, list()
+            base_resp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
+                                     "Please add host information to the domain.")
+            return base_resp, code_num, list()
 
         # get the managent conf in domain
         LOGGER.debug("############## get the managent conf in domain ##############")
@@ -426,37 +468,128 @@ class Format(object):
 
         if len(manage_confs) == 0:
             code_num = 404
-            base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." +
-                                    "Please add the configuration information first.")
-            return base_rsp, code_num, list()
+            base_resp = BaseResponse(code_num, "The configuration is not set in the current domain." +
+                                     "Please add the configuration information first.")
+            return base_resp, code_num, list()
         return base_resp, code_num, manage_confs
 
     @staticmethod
     def diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs):
-        host_ids = Format.get_hostid_list_by_domain(domain)
         sync_status = SyncStatus(domain_name=domain,
                                  host_status=[])
         from ragdoll.utils.object_parse import ObjectParse
+        directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
+
         for d_real_conf in real_conf_res_text:
-            host_id = d_real_conf.get("hostID")
+            host_id = d_real_conf.host_id
             host_sync_status = HostSyncStatus(host_id=host_id,
                                               sync_status=[])
-            d_real_conf_base = d_real_conf.get("conf_base_infos")
+            d_real_conf_base = d_real_conf.conf_base_infos
             for d_conf in d_real_conf_base:
-                d_conf_path = d_conf.get("filePath")
+                d_conf_path = d_conf.file_path
 
                 object_parse = ObjectParse()
-                conf_type = object_parse.get_conf_type_by_conf_path(d_conf_path)
-                conf_model = object_parse.create_conf_model_by_type(conf_type)
+                # get the conf type and model
+                conf_type, conf_model = Format.get_conf_type_model(d_conf_path, object_parse)
 
-                comp_res = ""
+                Format.deal_conf_sync_status(conf_model, d_conf, d_conf_path, directory_conf_is_synced,
+                                             host_sync_status, manage_confs)
+
+            if len(directory_conf_is_synced.single_conf) > 0:
+                synced_flag = SYNCHRONIZED
+                for single_config in directory_conf_is_synced.single_conf:
+                    if single_config.single_is_synced == SYNCHRONIZED:
+                        continue
+                    else:
+                        synced_flag = NOT_SYNCHRONIZE
+                directory_conf_is_synced.is_synced = synced_flag
+                host_sync_status.sync_status.append(directory_conf_is_synced)
+            sync_status.host_status.append(host_sync_status)
+        return sync_status
+
+    @staticmethod
+    def deal_conf_sync_status(conf_model, d_conf, d_conf_path, directory_conf_is_synced, host_sync_status,
+                              manage_confs):
+        comp_res = ""
+        for dir_path in DIRECTORY_FILE_PATH_LIST:
+            if str(d_conf_path).find(dir_path) == -1:
                 for d_man_conf in manage_confs:
                     if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
                         continue
-                    comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.get("confContents"))
+                    comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contens)
                 conf_is_synced = ConfIsSynced(file_path=d_conf_path,
                                               is_synced=comp_res)
                 host_sync_status.sync_status.append(conf_is_synced)
+            else:
+                directory_conf_is_synced.file_path = dir_path
+                confContents = json.loads(d_conf.conf_contens)
+                pam_conf_contents = ""
+                for d_man_conf in manage_confs:
+                    d_man_conf_path = d_man_conf.get("file_path")
+                    if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
+                        continue
+                    pam_conf_contents = d_man_conf.get("contents")
 
-            sync_status.host_status.append(host_sync_status)
-        return sync_status
+                pam_conf_contents_dict = json.loads(pam_conf_contents)
+
+                for pam_conf_content_key, pam_conf_content_value in pam_conf_contents_dict.items():
+                    if pam_conf_content_key not in confContents.keys():
+                        single_conf = SingleConfig(single_file_path=pam_conf_content_key,
+                                                   single_is_synced=NOT_SYNCHRONIZE)
+                        directory_conf_is_synced.single_conf.append(single_conf)
+                    else:
+                        dst_conf = confContents.get(pam_conf_content_key)
+                        comp_res = conf_model.conf_compare(pam_conf_content_value, dst_conf)
+                        single_conf = SingleConfig(single_file_path=d_conf_path, single_is_synced=comp_res)
+                        directory_conf_is_synced.single_conf.append(single_conf)
+
+    @staticmethod
+    def get_conf_type_model(d_conf_path, object_parse):
+        for dir_path in DIRECTORY_FILE_PATH_LIST:
+            if str(d_conf_path).find(dir_path) != -1:
+                conf_type = object_parse.get_conf_type_by_conf_path(dir_path)
+                conf_model = object_parse.create_conf_model_by_type(conf_type)
+            else:
+                conf_type = object_parse.get_conf_type_by_conf_path(d_conf_path)
+                conf_model = object_parse.create_conf_model_by_type(conf_type)
+            return conf_type, conf_model
+
+    @staticmethod
+    def deal_sync_res(conf_tools, contents, file_path, host_id, host_sync_result, object_parse):
+        sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
+        headers = {"Content-Type": "application/json"}
+        if file_path in DIRECTORY_FILE_PATH_LIST:
+            conf_sync_res_list = []
+            for directory_file_path, directory_content in json.loads(contents).items():
+                content = object_parse.parse_json_to_conf(directory_file_path, directory_content)
+                # Configuration to the host
+                data = {"host_id": host_id, "file_path": directory_file_path, "content": content}
+                sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+
+                resp_code = json.loads(sync_response.text).get('code')
+                resp = json.loads(sync_response.text).get('data').get('resp')
+
+                if resp_code == "200" and resp.get('sync_result') is True:
+                    conf_sync_res_list.append("SUCCESS")
+                else:
+                    conf_sync_res_list.append("FAILED")
+            if "FAILED" in conf_sync_res_list:
+                conf_sync_res = ConfSyncedRes(file_path=file_path, result="FAILED")
+            else:
+                conf_sync_res = ConfSyncedRes(file_path=file_path, result="SUCCESS")
+            host_sync_result.sync_result.append(conf_sync_res)
+        else:
+            content = object_parse.parse_json_to_conf(file_path, contents)
+            # Configuration to the host
+            data = {"host_id": host_id, "file_path": file_path, "content": content}
+            sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+
+            resp_code = json.loads(sync_response.text).get('code')
+            resp = json.loads(sync_response.text).get('data').get('resp')
+            conf_sync_res = ConfSyncedRes(file_path=file_path,
+                                          result="")
+            if resp_code == "200" and resp.get('sync_result') is True:
+                conf_sync_res.result = "SUCCESS"
+            else:
+                conf_sync_res.result = "FAILED"
+            host_sync_result.sync_result.append(conf_sync_res)

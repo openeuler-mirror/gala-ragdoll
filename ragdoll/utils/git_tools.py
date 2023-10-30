@@ -3,19 +3,15 @@ import subprocess
 import sys
 import configparser
 import ast
-from datetime import datetime
-from dateutil.parser import parse
 
+from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.log.log import LOGGER
 from ragdoll.models.git_log_message import GitLogMessage
-from ragdoll.models.conf_base_info import ConfBaseInfo
 from ragdoll.controllers.format import Format
-from ragdoll import util
 
-CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class GitTools(object):
-    def __init__(self, target_dir = None):
+    def __init__(self, target_dir=None):
         if target_dir:
             self._target_dir = target_dir
         else:
@@ -89,7 +85,7 @@ class GitTools(object):
     # Execute the shell command and return the execution node
     def run_shell_return_code(self, shell):
         cmd = subprocess.Popen(shell, stdin=subprocess.PIPE, stderr=sys.stderr, close_fds=True,
-                            stdout=sys.stdout, universal_newlines=True, shell=True, bufsize=1)
+                               stdout=sys.stdout, universal_newlines=True, shell=True, bufsize=1)
 
         output, err = cmd.communicate()
         return cmd.returncode
@@ -102,7 +98,6 @@ class GitTools(object):
         LOGGER.debug("################# shell cmd end ################")
         output, err = cmd.communicate()
         return output
-
 
     def makeGitMessage(self, path, logMessage):
         if len(logMessage) == 0:

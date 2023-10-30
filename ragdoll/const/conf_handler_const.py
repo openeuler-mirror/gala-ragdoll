@@ -26,3 +26,6 @@ LIMITS_ITEM_VALUE = "core|data|fsize|memlock|nofile|rss|stack|cpu|nproc|as|maxlo
                     "msgqueue|nice|rtprio|"
 RESOLV_KEY_VALUE = "nameserver|domain|search|sortlist|"
 FSTAB_COLUMN_NUM = 6
+PAM_FILE_PATH = "/etc/pam.d"
+DIRECTORY_FILE_PATH_LIST = ["/etc/pam.d"]
+CONFIG = "/etc/ragdoll/gala-ragdoll.conf"

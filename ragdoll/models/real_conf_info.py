@@ -16,7 +16,7 @@ class RealConfInfo(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, domain_name: str=None, host_id: str=None, conf_base_infos: List[RealconfBaseInfo]=None):  # noqa: E501
+    def __init__(self, domain_name: str=None, host_id: int=None, conf_base_infos: List[RealconfBaseInfo]=None):  # noqa: E501
         """RealConfInfo - a model defined in Swagger
 
         :param domain_name: The domain_name of this RealConfInfo.  # noqa: E501
@@ -28,7 +28,7 @@ class RealConfInfo(Model):
         """
         self.swagger_types = {
             'domain_name': str,
-            'host_id': str,
+            'host_id': int,
             'conf_base_infos': List[RealconfBaseInfo]
         }
 
@@ -75,7 +75,7 @@ class RealConfInfo(Model):
         self._domain_name = domain_name
 
     @property
-    def host_id(self) -> str:
+    def host_id(self) -> int:
         """Gets the host_id of this RealConfInfo.
 
 
@@ -85,7 +85,7 @@ class RealConfInfo(Model):
         return self._host_id
 
     @host_id.setter
-    def host_id(self, host_id: str):
+    def host_id(self, host_id: int):
         """Sets the host_id of this RealConfInfo.
 
 
