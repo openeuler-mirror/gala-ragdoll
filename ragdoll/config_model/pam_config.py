@@ -41,8 +41,8 @@ class PamConfig:
         xpath = yang_module.getXpathInModule(yang_info)  # get all xpath in yang_info
         for d_xpath in xpath:
             real_path = d_xpath.split('/')
-            section = real_path[2]
-            option = real_path[3]
+            section = real_path[-2]
+            option = real_path[-1]
             if section not in self.yang:
                 self.yang[section] = dict()
             self.yang[section][option] = None
