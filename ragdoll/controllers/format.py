@@ -1,8 +1,6 @@
 import os
 import logging
-import string
 import re
-import subprocess
 import json
 import configparser
 import ast
@@ -15,15 +13,13 @@ from ragdoll.models.conf_files import ConfFiles
 from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.real_conf_info import RealConfInfo  # noqa: E501
 from ragdoll.models.conf_is_synced import ConfIsSynced
-from ragdoll.models.host_sync_result import HostSyncResult
 from ragdoll.models.host_sync_status import HostSyncStatus
 from ragdoll.models.sync_status import SyncStatus  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.utils.host_tools import HostTools
 
-
-
 CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
+
 
 class Format(object):
 
@@ -167,7 +163,7 @@ class Format(object):
             logging.debug("File: %s is a symlink, skipped!", d_file)
         else:
             logging.error("File: %s does not exist.", d_file)
-        
+
         return False
 
     @staticmethod
@@ -297,7 +293,6 @@ class Format(object):
         logging.debug("expected_conf_lists is :{}".format(expected_conf_lists))
         return expected_conf_lists.to_dict()
 
-
     @staticmethod
     def get_realconf_by_domain_and_host(domain, exist_host):
         res = []
@@ -323,9 +318,9 @@ class Format(object):
         url = conf_tools.load_url_by_conf().get("collect_url")
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
-        resp = json.loads(response.text).get("resp")
+        resp = json.loads(response.text).get("data")
         resp_code = json.loads(response.text).get("code")
-        if (resp_code != 200) and (resp_code != 206):
+        if (resp_code != "200") and (resp_code != "206"):
             return res
 
         if not resp or len(resp) == 0:
@@ -360,7 +355,8 @@ class Format(object):
                 object_parse = ObjectParse()
                 content_string = object_parse.parse_conf_to_json(file_path, content)
                 file_atrr = d_file.get("file_attr").get("mode")
-                file_owner = "({}, {})".format(d_file.get("file_attr").get("group"), d_file.get("file_attr").get("owner"))
+                file_owner = "({}, {})".format(d_file.get("file_attr").get("group"),
+                                               d_file.get("file_attr").get("owner"))
                 real_conf_base_info = RealconfBaseInfo(path=file_path,
                                                        file_path=file_path,
                                                        file_attr=file_atrr,
@@ -411,7 +407,7 @@ class Format(object):
         return host_ids
 
     @staticmethod
-    def _get_domain_conf(domain, manage_confs):
+    def _get_domain_conf(domain):
         code_num = 200
         base_resp = None
         # get the host info in domain
@@ -421,7 +417,7 @@ class Format(object):
             code_num = 404
             base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
                                     "Please add host information to the domain.")
-            return base_rsp, code_num
+            return base_rsp, code_num, list()
 
         # get the managent conf in domain
         LOGGER.debug("############## get the managent conf in domain ##############")
@@ -432,13 +428,14 @@ class Format(object):
             code_num = 404
             base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." +
                                     "Please add the configuration information first.")
-        return base_resp, code_num
+            return base_rsp, code_num, list()
+        return base_resp, code_num, manage_confs
 
     @staticmethod
     def diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs):
         host_ids = Format.get_hostid_list_by_domain(domain)
         sync_status = SyncStatus(domain_name=domain,
-                             host_status=[])
+                                 host_status=[])
         from ragdoll.utils.object_parse import ObjectParse
         for d_real_conf in real_conf_res_text:
             host_id = d_real_conf.get("hostID")
