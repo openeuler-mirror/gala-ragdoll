@@ -27,7 +27,7 @@ class Format(object):
     def domainCheck(domainName):
         res = True
         if not re.match(r"^[A-Za-z0-9_\.-]*$", domainName) or domainName == "" or len(domainName) > 255:
-            return False
+            res =  False
         return res
 
     @staticmethod
@@ -96,8 +96,7 @@ class Format(object):
                 line_dict = json.loads(str(ast.literal_eval(line)).replace("'", "\""))
                 if content == line_dict["host_id"]:
                     isContained = True
-                    return isContained
-
+                    break
         return isContained
 
     @staticmethod
