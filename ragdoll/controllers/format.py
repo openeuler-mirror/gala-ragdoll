@@ -171,13 +171,20 @@ class Format(object):
         desc: remove empty lines and comments from d_file
         """
         res = []
-        with open(d_file, 'r') as s_f:
-            lines = s_f.readlines()
-            for line in lines:
-                tmp = line.strip()
-                if not len(tmp) or tmp.startswith("#"):
-                    continue
-                res.append(line)
+        try:
+            with open(d_file, 'r') as s_f:
+                lines = s_f.readlines()
+                for line in lines:
+                    tmp = line.strip()
+                    if not len(tmp) or tmp.startswith("#"):
+                        continue
+                    res.append(line)
+        except FileNotFoundError:
+            logging.error(f"File not found: {d_file}")
+        except IOError as e:
+            logging.error(f"IO error: {e}")
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
         return res
 
     @staticmethod
