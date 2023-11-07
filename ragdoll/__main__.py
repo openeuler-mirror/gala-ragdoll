@@ -4,13 +4,12 @@ import connexion
 import configparser
 import os
 import ast
-from io import StringIO
 
 from ragdoll import encoder
+from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.prepare import Prepare
 
-CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 def main():
     # prepare to load config
@@ -55,6 +54,7 @@ def load_port():
         cf.read("config/gala-ragdoll.conf", encoding="utf-8")
     ragdoll_port = cf.get("ragdoll", "port")
     return ragdoll_port
+
 
 if __name__ == '__main__':
     main()

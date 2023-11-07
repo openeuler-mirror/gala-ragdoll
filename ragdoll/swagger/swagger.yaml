@@ -5,33 +5,33 @@ info:
   version: "1.0"
   title: "Configuration traceability"
 tags:
-- name: "domain"
-  description: "configuration domain"
-- name: "host"
-  description: "host in domain"
-- name: "management"
-  description: "management configuration"
-- name: "confs"
-  description: "query the configuration"
-- name: "demo"
-  description: "project demo server"
+  - name: "domain"
+    description: "configuration domain"
+  - name: "host"
+    description: "host in domain"
+  - name: "management"
+    description: "management configuration"
+  - name: "confs"
+    description: "query the configuration"
+  - name: "demo"
+    description: "project demo server"
 paths:
   /domain/createDomain:
     post:
       tags:
-      - "domain"
+        - "domain"
       summary: "create domain"
       description: "create domain"
       operationId: "create_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          type: "array"
-          items:
-            $ref: "#/definitions/Domain"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Domain"
       responses:
         "200":
           description: "create domain successfully"
@@ -45,11 +45,11 @@ paths:
   /domain/queryDomain:
     post:
       tags:
-      - "domain"
+        - "domain"
       summary: "query the list of all configuration domain"
       description: "query the list of all configuration domain"
       operationId: "query_domain"
-      parameters: []
+      parameters: [ ]
       responses:
         "200":
           description: "query domain successfully"
@@ -61,19 +61,19 @@ paths:
   /domain/deleteDomain:
     delete:
       tags:
-      - "domain"
+        - "domain"
       summary: "delete domain"
       description: "delete domain"
       operationId: "delete_domain"
       parameters:
-      - name: "domainName"
-        in: "query"
-        description: "the domain that needs to be deleted"
-        required: true
-        type: "array"
-        items:
-          type: "string"
-        collectionFormat: "multi"
+        - name: "domainName"
+          in: "query"
+          description: "the domain that needs to be deleted"
+          required: true
+          type: "array"
+          items:
+            type: "string"
+          collectionFormat: "multi"
       responses:
         "200":
           description: "delete domain successfully"
@@ -83,17 +83,17 @@ paths:
   /host/addHost:
     post:
       tags:
-      - "host"
+        - "host"
       summary: "add host in the configuration domain"
       description: "add host in the configuration domain"
       operationId: "add_host_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/HostInfos"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/HostInfos"
       responses:
         "200":
           description: "add host successfully in domain"
@@ -103,17 +103,17 @@ paths:
   /host/getHost:
     post:
       tags:
-      - "host"
+        - "host"
       summary: "get host by domainName"
       description: "get the host information of the configuration domain"
       operationId: "get_host_by_domain_name"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/DomainName"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/DomainName"
       responses:
         "200":
           description: "get host successfully in domain"
@@ -125,17 +125,17 @@ paths:
   /host/deleteHost:
     delete:
       tags:
-      - "host"
+        - "host"
       summary: "delete host in the configuration  domain"
       description: "delete the host in the configuration domain"
       operationId: "delete_host_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/HostInfos"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/HostInfos"
       responses:
         "200":
           description: "delete host successfully in domain"
@@ -145,18 +145,18 @@ paths:
   /management/addManagementConf:
     post:
       tags:
-      - "management"
+        - "management"
       summary: "add management configuration items and expected values in the domain"
       description: "add management configuration items and expected values in the\
         \ domain"
       operationId: "add_management_confs_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/Confs"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/Confs"
       responses:
         "200":
           description: "add management configuration items successfully in domain"
@@ -193,18 +193,18 @@ paths:
   /management/getManagementConf:
     post:
       tags:
-      - "management"
+        - "management"
       summary: "get management configuration items and expected values in the domain"
       description: "get management configuration items and expected values in the\
         \ domain"
       operationId: "get_management_confs_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/DomainName"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/DomainName"
       responses:
         "200":
           description: "get management configuration items successfully in domain"
@@ -214,17 +214,17 @@ paths:
   /management/queryManageConfChange:
     post:
       tags:
-      - "management"
+        - "management"
       summary: "query the change log of management config in domain"
       description: "query the change log of management config in domain"
       operationId: "query_changelog_of_management_confs_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/ManageConfs"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/ManageConfs"
       responses:
         "200":
           description: "query the changelog of management configuration items successfully\
@@ -235,18 +235,18 @@ paths:
   /management/deleteManagementConf:
     delete:
       tags:
-      - "management"
+        - "management"
       summary: "delete management configuration items and expected values in the domain"
       description: "delete management configuration items and expected values in the\
         \ domain"
       operationId: "delete_management_confs_in_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "domain info"
-        required: false
-        schema:
-          $ref: "#/definitions/ManageConfs"
+        - in: "body"
+          name: "body"
+          description: "domain info"
+          required: false
+          schema:
+            $ref: "#/definitions/ManageConfs"
       responses:
         "200":
           description: "delete management configuration items successfully in domain"
@@ -256,16 +256,16 @@ paths:
   /confs/queryRealConfs:
     post:
       tags:
-      - "confs"
+        - "confs"
       summary: "query the real configuration value in the current hostId node"
       description: "query the real configuration value in the current hostId node"
       operationId: "query_real_confs"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/ConfHost"
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/ConfHost"
       responses:
         "200":
           description: "query total modules successfully"
@@ -299,11 +299,11 @@ paths:
   /confs/queryExpectedConfs:
     post:
       tags:
-      - "confs"
+        - "confs"
       summary: "query expected configuration value in the current hostId node"
       description: "queryExpectedConfs"
       operationId: "query_excepted_confs"
-      parameters: []
+      parameters: [ ]
       responses:
         "200":
           description: "query expected configuration value successfully"
@@ -340,16 +340,16 @@ paths:
   /confs/getDomainStatus:
     post:
       tags:
-      - "confs"
+        - "confs"
       summary: "get the status of the domain"
       description: "get the status of whether the domain has been synchronized"
       operationId: "get_the_sync_status_of_domain"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/DomainName"
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/DomainName"
       responses:
         "200":
           description: "get the status of the domain successfully"
@@ -362,11 +362,11 @@ paths:
       description: "get real configuration value in host by conf_path"
       operationId: "collect_conf"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/CollectInfo"
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/CollectInfo"
       responses:
         "200":
           description: "get real configuration value in host by conf_path successfully"
@@ -382,11 +382,11 @@ paths:
       description: "synchronize the configuration information to the host"
       operationId: "sync_conf"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/SyncInfo"
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/SyncInfo"
       responses:
         "200":
           description: "Configuration synchronization succeeded."
@@ -431,7 +431,7 @@ definitions:
   Host:
     type: "object"
     required:
-    - "hostId"
+      - "hostId"
     properties:
       hostId:
         type: "integer"
@@ -472,10 +472,10 @@ definitions:
           $ref: "#/definitions/ConfFile"
     example:
       confFiles:
-      - contents: "contents"
-        filePath: "filePath"
-      - contents: "contents"
-        filePath: "filePath"
+        - contents: "contents"
+          filePath: "filePath"
+        - contents: "contents"
+          filePath: "filePath"
       domainName: "domainName"
   ConfFile:
     type: "object"
@@ -539,16 +539,16 @@ definitions:
       domainName: "domainName"
       hostID: "hostID"
       confBaseInfos:
-      - rpmName: "rpmName"
-        path: "path"
-        filePath: "filePath"
-        spacer: "spacer"
-        rpmVersion: "rpmVersion"
-        rpmRelease: "rpmRelease"
-        fileOwner: "fileOwner"
-        confType: "key-value"
-        confContents: "confContents"
-        fileAttr: "fileAttr"
+        - rpmName: "rpmName"
+          path: "path"
+          filePath: "filePath"
+          spacer: "spacer"
+          rpmVersion: "rpmVersion"
+          rpmRelease: "rpmRelease"
+          fileOwner: "fileOwner"
+          confType: "key-value"
+          confContents: "confContents"
+          fileAttr: "fileAttr"
   RealconfBaseInfo:
     type: "object"
     properties:
@@ -576,11 +576,11 @@ definitions:
         type: "string"
         description: "the configuration type"
         enum:
-        - "key-value"
-        - "toml"
-        - "json"
-        - "xml"
-        - "text"
+          - "key-value"
+          - "toml"
+          - "json"
+          - "xml"
+          - "text"
       spacer:
         type: "string"
         description: "spacers of configuration items in the configuration file"
@@ -610,36 +610,36 @@ definitions:
     example:
       domainName: "domainName"
       confBaseInfos:
-      - expectedContents: "expectedContents"
-        filePath: "filePath"
-        changeLog:
-        - date: "2000-01-23T04:56:07.000+00:00"
-          preValue: "preValue"
-          changeReason: "changeReason"
-          author: "author"
-          postValue: "postValue"
-          changeId: "changeId"
-        - date: "2000-01-23T04:56:07.000+00:00"
-          preValue: "preValue"
-          changeReason: "changeReason"
-          author: "author"
-          postValue: "postValue"
-          changeId: "changeId"
-      - expectedContents: "expectedContents"
-        filePath: "filePath"
-        changeLog:
-        - date: "2000-01-23T04:56:07.000+00:00"
-          preValue: "preValue"
-          changeReason: "changeReason"
-          author: "author"
-          postValue: "postValue"
-          changeId: "changeId"
-        - date: "2000-01-23T04:56:07.000+00:00"
-          preValue: "preValue"
-          changeReason: "changeReason"
-          author: "author"
-          postValue: "postValue"
-          changeId: "changeId"
+        - expectedContents: "expectedContents"
+          filePath: "filePath"
+          changeLog:
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+        - expectedContents: "expectedContents"
+          filePath: "filePath"
+          changeLog:
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
   ConfBaseInfo:
     type: "object"
     properties:
@@ -657,18 +657,18 @@ definitions:
       expectedContents: "expectedContents"
       filePath: "filePath"
       changeLog:
-      - date: "2000-01-23T04:56:07.000+00:00"
-        preValue: "preValue"
-        changeReason: "changeReason"
-        author: "author"
-        postValue: "postValue"
-        changeId: "changeId"
-      - date: "2000-01-23T04:56:07.000+00:00"
-        preValue: "preValue"
-        changeReason: "changeReason"
-        author: "author"
-        postValue: "postValue"
-        changeId: "changeId"
+        - date: "2000-01-23T04:56:07.000+00:00"
+          preValue: "preValue"
+          changeReason: "changeReason"
+          author: "author"
+          postValue: "postValue"
+          changeId: "changeId"
+        - date: "2000-01-23T04:56:07.000+00:00"
+          preValue: "preValue"
+          changeReason: "changeReason"
+          author: "author"
+          postValue: "postValue"
+          changeId: "changeId"
   GitLogMessage:
     type: "object"
     properties:
@@ -716,18 +716,18 @@ definitions:
           $ref: "#/definitions/HostSyncStatus"
     example:
       hostStatus:
-      - hostId: "hostId"
-        syncStatus:
-        - isSynced: "NOT FOUND"
-          filePath: "filePath"
-        - isSynced: "NOT FOUND"
-          filePath: "filePath"
-      - hostId: "hostId"
-        syncStatus:
-        - isSynced: "NOT FOUND"
-          filePath: "filePath"
-        - isSynced: "NOT FOUND"
-          filePath: "filePath"
+        - hostId: "hostId"
+          syncStatus:
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+        - hostId: "hostId"
+          syncStatus:
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
       domainName: "domainName"
   HostSyncStatus:
     type: "object"
@@ -742,10 +742,10 @@ definitions:
     example:
       hostId: "hostId"
       syncStatus:
-      - isSynced: "NOT FOUND"
-        filePath: "filePath"
-      - isSynced: "NOT FOUND"
-        filePath: "filePath"
+        - isSynced: "NOT FOUND"
+          filePath: "filePath"
+        - isSynced: "NOT FOUND"
+          filePath: "filePath"
   ConfIsSynced:
     type: "object"
     properties:
@@ -754,12 +754,17 @@ definitions:
       isSynced:
         type: "string"
         enum:
-        - "NOT FOUND"
-        - "NOT SYNCHRONIZE"
-        - "SYNCHRONIZED"
+          - "NOT FOUND"
+          - "NOT SYNCHRONIZE"
+          - "SYNCHRONIZED"
+      singleConf:
+        type: "object"
+        items:
+          $ref: "#/definitions/SingleConf"
     example:
       isSynced: "NOT FOUND"
       filePath: "filePath"
+      singleConf: "singleConf"
   HostSyncResult:
     type: "object"
     properties:
@@ -770,8 +775,8 @@ definitions:
         type: "string"
         description: "the result of host"
         enum:
-        - "SUCCESS"
-        - "FAILED"
+          - "SUCCESS"
+          - "FAILED"
     example:
       hostId: "hostId"
       syncStatus: "SUCCESS"
@@ -786,10 +791,10 @@ definitions:
     type: "object"
     properties:
       host_id:
-        type: "integer"
+        type: "string"
       config_list:
         type: "array"
-        items: 
+        items:
           $ref: "#/definitions/ConfPath"
   ConfPath:
     type: string
@@ -825,3 +830,15 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/SyncHostConfs"
+  SingleConf:
+    type: object
+    properties:
+      singleFilePath:
+        type: "string"
+        description: "single file path"
+      singleIsSynced:
+        type: "string"
+        enum:
+          - "NOT FOUND"
+          - "NOT SYNCHRONIZE"
+          - "SYNCHRONIZED"

@@ -18,9 +18,11 @@ Description: log module.
 import os
 import stat
 import logging
+
+import configparser
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-from ragdoll.utils.conf_tools import ConfTools
+from ragdoll.const.conf_handler_const import CONFIG
 
 
 class Logger:
@@ -28,11 +30,28 @@ class Logger:
     Logger class.
     """
 
+    def load_log_conf(self):
+        """
+        desc: get the log configuration
+        """
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            cf.read("config/gala-ragdoll.conf", encoding="utf-8")
+        log_level = cf.get("log", "log_level")
+        log_dir = cf.get("log", "log_dir")
+        max_bytes = cf.get("log", "max_bytes")
+        backup_count = cf.get("log", "backup_count")
+        log_conf = {"log_level": log_level, "log_dir": log_dir, "max_bytes": int(max_bytes),
+                    "backup_count": int(backup_count)}
+        return log_conf
+
     def __init__(self):
         """
         Class instance initialization.
         """
-        log_conf = ConfTools.load_log_conf()
+        log_conf = self.load_log_conf()
         log_dir = log_conf.get("log_dir")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, mode=0o644)

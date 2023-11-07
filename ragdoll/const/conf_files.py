@@ -22,5 +22,6 @@ yang_conf_list = [
     "/etc/rc.local",
     "/etc/bashrc",
     "/etc/profile",
-    "/etc/hosts"
+    "/etc/hosts",
+    "/etc/pam.d"
 ]

@@ -1,19 +1,15 @@
 import os
-import subprocess
-import sys
 import json
-import operator
 import configparser
 import ast
 from enum import Enum
 
+from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.utils.git_tools import GitTools
 from ragdoll.controllers.format import Format
 from ragdoll.log.log import LOGGER
 from ragdoll.models.real_conf import RealConf
 from ragdoll.models.real_conf_path import RealConfPath
-from ragdoll.models.conf_is_synced import ConfIsSynced
-from ragdoll.models.host_sync_status import HostSyncStatus
 
 PATH = "path"
 EXCEPTED_VALUE = "expectedValue"
@@ -49,8 +45,6 @@ SPERM = 0
 NOTFOUND = "NOT FOUND"
 NOTSYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
-
-CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 
 class SyncRes(Enum):
@@ -137,7 +131,7 @@ class ConfTools(object):
 
     def realConfToExpectDict(self, realConfResText):
         """
-        desc: Convert the actual configuration into a dict of the same format as the expected 
+        desc: Convert the actual configuration into a dict of the same format as the expected
               configuration for easy comparison, using the model information.
          example:
             input:
@@ -145,17 +139,17 @@ class ConfTools(object):
                                     {
                                         "confBaseInfos": [
                                             {
-                                                "confContents": "{\"OS\": {\"baseurl\": \"http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/\", \"enabled\": \"1\", \"gpgcheck\": \"0\", \"gpgkey\": \"http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/RPM-GPG-KEY-openEuler\", \"name\": \"OS\"}}", 
-                                                "fileAttr": "0644", 
-                                                "fileOwner": "(root root)", 
-                                                "filePath": "/etc/yum.repos.d/openEuler.repo", 
-                                                "path": "yum/openEuler.repo/OS/name yum/openEuler.repo/OS/baseurl yum/openEuler.repo/enabled yum/openEuler.repo/gpgcheck yum/openEuler.repo/gpgkey", 
-                                                "rpmName": "openEuler-repos", 
-                                                "rpmRelease": "3.0.oe1.aarch64", 
+                                                "confContents": "{\"OS\": {\"baseurl\": \"http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/\", \"enabled\": \"1\", \"gpgcheck\": \"0\", \"gpgkey\": \"http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/RPM-GPG-KEY-openEuler\", \"name\": \"OS\"}}",
+                                                "fileAttr": "0644",
+                                                "fileOwner": "(root root)",
+                                                "filePath": "/etc/yum.repos.d/openEuler.repo",
+                                                "path": "yum/openEuler.repo/OS/name yum/openEuler.repo/OS/baseurl yum/openEuler.repo/enabled yum/openEuler.repo/gpgcheck yum/openEuler.repo/gpgkey",
+                                                "rpmName": "openEuler-repos",
+                                                "rpmRelease": "3.0.oe1.aarch64",
                                                 "rpmVersion": "1.0"
                                             }
-                                        ], 
-                                        "domainName": "OS", 
+                                        ],
+                                        "domainName": "OS",
                                         "hostID": "551d02da-7d8c-4357-b88d-15dc55ee22cc"
                                     }
                                 ]
@@ -236,7 +230,7 @@ class ConfTools(object):
                             "gpgkey": "http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/RPM-GPG-KEY-openEuler"
                         }
                     }
-        output: <SyncSta> 
+        output: <SyncSta>
                 string
         """
 
@@ -399,7 +393,7 @@ class ConfTools(object):
 
     def writeBakFileInPath(self, path, content):
         """
-        desc: Create the Path file, and write the content content, return the write result 
+        desc: Create the Path file, and write the content content, return the write result
         """
         res = False
         cwd = os.getcwd()
@@ -436,7 +430,7 @@ class ConfTools(object):
             input:
                 real_conf: [
                     {
-                        'path': 'OS/yum/openEuler.repo/OS/name', 
+                        'path': 'OS/yum/openEuler.repo/OS/name',
                         'real_value': 'OS'
                     },
                     {
@@ -469,7 +463,7 @@ class ConfTools(object):
             input:
                 manage_confs: [
                     {
-                        'path': 'OS/yum/openEuler.repo/OS/name', 
+                        'path': 'OS/yum/openEuler.repo/OS/name',
                         'expectedValue': 'OS'
                     },
                     {
@@ -503,11 +497,11 @@ class ConfTools(object):
         example:
             realConf:[
                         {
-                            "path": "OS/yum/openEuler.repo/OS/name", 
+                            "path": "OS/yum/openEuler.repo/OS/name",
                             "real_value": "OS"
-                        }, 
+                        },
                         {
-                            "path": "OS/yum/openEuler.repo/OS/baseurl", 
+                            "path": "OS/yum/openEuler.repo/OS/baseurl",
                             "real_value": "https://repo.huaweicloud.com/openeuler/openEuler-20.03-LTS-SP1/everything/x86_64/"
                         }]
             confContents:"{
@@ -560,7 +554,7 @@ class ConfTools(object):
             input:
                 contents: [
                     '[OS]',
-                    'name=OS', 
+                    'name=OS',
                     'baseurl=https://repo.huaweicloud.com/openeuler/openEuler-20.03-LTS-SP1/everything/x86_64/',
                     'enabled=1',
                     'gpgcheck=0',
@@ -576,7 +570,7 @@ class ConfTools(object):
 
     def wirteFileInPath(self, path, content):
         """
-        desc: Create the Path file, and write the content content, return the write result 
+        desc: Create the Path file, and write the content content, return the write result
         """
         res = False
         path_delete_last = ""
@@ -622,7 +616,13 @@ class ConfTools(object):
         sync_port = str(cf.get("sync", "sync_port"))
         sync_url = "{address}:{port}{api}".format(address=sync_address, api=sync_api, port=sync_port)
 
-        url = {"collect_url": collect_url, "sync_url": sync_url}
+        object_file_address = ast.literal_eval(cf.get("objectFile", "object_file_address"))
+        object_file_api = ast.literal_eval(cf.get("objectFile", "object_file_api"))
+        object_file_port = str(cf.get("objectFile", "object_file_port"))
+        object_file_url = "{address}:{port}{api}".format(address=object_file_address, api=object_file_api,
+                                                         port=object_file_port)
+
+        url = {"collect_url": collect_url, "sync_url": sync_url, "object_file_url": object_file_url}
         return url
 
     def load_port_by_conf(self):

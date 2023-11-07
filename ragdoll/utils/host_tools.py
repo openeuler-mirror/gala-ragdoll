@@ -2,9 +2,9 @@ import os
 import configparser
 import ast
 
+from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.log.log import LOGGER
 
-CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class HostTools(object):
     def __init__(self):

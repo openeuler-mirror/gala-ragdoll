@@ -75,7 +75,7 @@ class SshdConfig():
         content = content + '\n'
         return content
 
-    def read_json(self, conf_json):
+    def read_json(self, conf_path, conf_json):
         """
         desc: 将json格式的配置文件内容结构化成Class conf成员。
         """
