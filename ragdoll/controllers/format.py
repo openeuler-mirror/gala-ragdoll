@@ -1,5 +1,4 @@
 import os
-import logging
 import re
 import json
 import configparser
@@ -161,9 +160,9 @@ class Format(object):
         if os.path.exists(d_file):
             return True
         if os.path.islink(d_file):
-            logging.debug("file: %s is a symlink, skipped!", d_file)
+            LOGGER.debug("file: %s is a symlink, skipped!", d_file)
             return False
-        logging.error("file: %s does not exist.", d_file)
+        LOGGER.error("file: %s does not exist.", d_file)
         return False
 
     @staticmethod
@@ -181,11 +180,11 @@ class Format(object):
                         continue
                     res.append(line)
         except FileNotFoundError:
-            logging.error(f"File not found: {d_file}")
+            LOGGER.error(f"File not found: {d_file}")
         except IOError as e:
-            logging.error(f"IO error: {e}")
+            LOGGER.error(f"IO error: {e}")
         except Exception as e:
-            logging.error(f"An error occurred: {e}")
+            LOGGER.error(f"An error occurred: {e}")
         return res
 
     @staticmethod
@@ -267,12 +266,12 @@ class Format(object):
                     host = Host(host_id=hostId, ip=ip, ipv6=ipv6)
                     hostlist.append(host.to_dict())
         except OSError as err:
-            logging.error("OS error: {0}".format(err))
+            LOGGER.error("OS error: {0}".format(err))
             return hostlist
         if len(hostlist) == 0:
-            logging.debug("hostlist is empty : {}".format(hostlist))
+            LOGGER.debug("hostlist is empty : {}".format(hostlist))
         else:
-            logging.debug("hostlist is : {}".format(hostlist))
+            LOGGER.debug("hostlist is : {}".format(hostlist))
         return hostlist
 
     @staticmethod
@@ -297,7 +296,7 @@ class Format(object):
                     conf = ConfFile(file_path=file_path, contents=contents)
                     expected_conf_lists.conf_files.append(conf.to_dict())
 
-        logging.debug("expected_conf_lists is :{}".format(expected_conf_lists))
+        LOGGER.debug("expected_conf_lists is :{}".format(expected_conf_lists))
         return expected_conf_lists.to_dict()
 
     @staticmethod
@@ -319,7 +318,7 @@ class Format(object):
                 d_conf_contents = json.loads(d_conf_cs)
                 for d_conf_key, d_conf_value in d_conf_contents.items():
                     conf_list.append(d_conf_key)
-        logging.debug("############## get the real conf in host ##############")
+        LOGGER.debug("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
         for d_host in exist_host:
