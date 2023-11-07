@@ -41,6 +41,8 @@ class TextConfig(BaseHandlerConfig):
 
     def write_conf(self):
         content = ""
-        for conf_list in self.conf:
-            content += '\t'.join(conf_list) + '\n'
+        for value in self.conf:
+            if value is not None:
+                content = content + value + "\n"
+        content = content + '\n'
         return content
