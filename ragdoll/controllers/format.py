@@ -28,7 +28,7 @@ class Format(object):
     def domainCheck(domainName):
         res = True
         if not re.match(r"^[A-Za-z0-9_\.-]*$", domainName) or domainName == "" or len(domainName) > 255:
-            res =  False
+            res = False
         return res
 
     @staticmethod
@@ -329,7 +329,14 @@ class Format(object):
         get_real_conf_body["infos"] = get_real_conf_body_info
         url = conf_tools.load_url_by_conf().get("collect_url")
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        try:
+            response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            codeNum = 500
+            codeString = "Failed to obtain the actual configuration, please check the interface of config/collect."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
         resp = json.loads(response.text).get("data")
         resp_code = json.loads(response.text).get("code")
         if (resp_code != "200") and (resp_code != "206"):
@@ -483,7 +490,6 @@ class Format(object):
         sync_status = SyncStatus(domain_name=domain,
                                  host_status=[])
         from ragdoll.utils.object_parse import ObjectParse
-        directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
 
         for d_real_conf in real_conf_res_text:
             host_id = d_real_conf.host_id
@@ -491,6 +497,7 @@ class Format(object):
                                               sync_status=[])
             d_real_conf_base = d_real_conf.conf_base_infos
             for d_conf in d_real_conf_base:
+                directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
                 d_conf_path = d_conf.file_path
 
                 object_parse = ObjectParse()
@@ -500,15 +507,15 @@ class Format(object):
                 Format.deal_conf_sync_status(conf_model, d_conf, d_conf_path, directory_conf_is_synced,
                                              host_sync_status, manage_confs)
 
-            if len(directory_conf_is_synced.single_conf) > 0:
-                synced_flag = SYNCHRONIZED
-                for single_config in directory_conf_is_synced.single_conf:
-                    if single_config.single_is_synced == SYNCHRONIZED:
-                        continue
-                    else:
-                        synced_flag = NOT_SYNCHRONIZE
-                directory_conf_is_synced.is_synced = synced_flag
-                host_sync_status.sync_status.append(directory_conf_is_synced)
+                if len(directory_conf_is_synced.single_conf) > 0:
+                    synced_flag = SYNCHRONIZED
+                    for single_config in directory_conf_is_synced.single_conf:
+                        if single_config.single_is_synced == SYNCHRONIZED:
+                            continue
+                        else:
+                            synced_flag = NOT_SYNCHRONIZE
+                    directory_conf_is_synced.is_synced = synced_flag
+                    host_sync_status.sync_status.append(directory_conf_is_synced)
             sync_status.host_status.append(host_sync_status)
         return sync_status
 
@@ -516,37 +523,38 @@ class Format(object):
     def deal_conf_sync_status(conf_model, d_conf, d_conf_path, directory_conf_is_synced, host_sync_status,
                               manage_confs):
         comp_res = ""
-        for dir_path in DIRECTORY_FILE_PATH_LIST:
-            if str(d_conf_path).find(dir_path) == -1:
-                for d_man_conf in manage_confs:
-                    if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
-                        continue
-                    comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contens)
-                conf_is_synced = ConfIsSynced(file_path=d_conf_path,
-                                              is_synced=comp_res)
-                host_sync_status.sync_status.append(conf_is_synced)
-            else:
-                directory_conf_is_synced.file_path = dir_path
-                confContents = json.loads(d_conf.conf_contens)
-                pam_conf_contents = ""
-                for d_man_conf in manage_confs:
-                    d_man_conf_path = d_man_conf.get("file_path")
-                    if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
-                        continue
-                    pam_conf_contents = d_man_conf.get("contents")
+        if d_conf_path in DIRECTORY_FILE_PATH_LIST:
+            confContents = json.loads(d_conf.conf_contens)
+            directory_conf_contents = ""
+            for d_man_conf in manage_confs:
+                d_man_conf_path = d_man_conf.get("file_path")
+                if d_man_conf_path != d_conf_path:
+                    # if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
+                    continue
+                else:
+                    directory_conf_is_synced.file_path = d_conf_path
+                    directory_conf_contents = d_man_conf.get("contents")
 
-                pam_conf_contents_dict = json.loads(pam_conf_contents)
+            directory_conf_contents_dict = json.loads(directory_conf_contents)
 
-                for pam_conf_content_key, pam_conf_content_value in pam_conf_contents_dict.items():
-                    if pam_conf_content_key not in confContents.keys():
-                        single_conf = SingleConfig(single_file_path=pam_conf_content_key,
-                                                   single_is_synced=NOT_SYNCHRONIZE)
-                        directory_conf_is_synced.single_conf.append(single_conf)
-                    else:
-                        dst_conf = confContents.get(pam_conf_content_key)
-                        comp_res = conf_model.conf_compare(pam_conf_content_value, dst_conf)
-                        single_conf = SingleConfig(single_file_path=d_conf_path, single_is_synced=comp_res)
-                        directory_conf_is_synced.single_conf.append(single_conf)
+            for dir_conf_content_key, dir_conf_content_value in directory_conf_contents_dict.items():
+                if dir_conf_content_key not in confContents.keys():
+                    single_conf = SingleConfig(single_file_path=dir_conf_content_key,
+                                               single_is_synced=NOT_SYNCHRONIZE)
+                    directory_conf_is_synced.single_conf.append(single_conf)
+                else:
+                    dst_conf = confContents.get(dir_conf_content_key)
+                    comp_res = conf_model.conf_compare(dir_conf_content_value, dst_conf)
+                    single_conf = SingleConfig(single_file_path=dir_conf_content_key, single_is_synced=comp_res)
+                    directory_conf_is_synced.single_conf.append(single_conf)
+        else:
+            for d_man_conf in manage_confs:
+                if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
+                    continue
+                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contens)
+            conf_is_synced = ConfIsSynced(file_path=d_conf_path,
+                                          is_synced=comp_res)
+            host_sync_status.sync_status.append(conf_is_synced)
 
     @staticmethod
     def get_conf_type_model(d_conf_path, object_parse):
@@ -569,8 +577,14 @@ class Format(object):
                 content = object_parse.parse_json_to_conf(directory_file_path, directory_content)
                 # Configuration to the host
                 data = {"host_id": host_id, "file_path": directory_file_path, "content": content}
-                sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
-
+                try:
+                    sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+                except requests.exceptions.RequestException as connect_ex:
+                    LOGGER.error(f"An error occurred: {connect_ex}")
+                    codeNum = 500
+                    codeString = "Failed to sync configuration, please check the interface of config/sync."
+                    base_rsp = BaseResponse(codeNum, codeString)
+                    return base_rsp, codeNum
                 resp_code = json.loads(sync_response.text).get('code')
                 resp = json.loads(sync_response.text).get('data').get('resp')
 

@@ -14,8 +14,10 @@ import importlib
 import requests
 
 from ragdoll.const.conf_handler_const import DIRECTORY_FILE_PATH_LIST
+from ragdoll.models import BaseResponse
 from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.yang_module import YangModule
+from ragdoll.log.log import LOGGER
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
@@ -172,7 +174,7 @@ class ObjectParse(object):
 
         return conf_info
 
-    def get_pam_files(self, d_conf, host_id):
+    def get_directory_files(self, d_conf, host_id):
         file_paths = list()
         conf_tools = ConfTools()
         file_directory = dict()
@@ -180,7 +182,14 @@ class ObjectParse(object):
         file_directory['host_id'] = host_id
         url = conf_tools.load_url_by_conf().get("object_file_url")
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, data=json.dumps(file_directory), headers=headers)
+        try:
+            response = requests.post(url, data=json.dumps(file_directory), headers=headers)
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            codeNum = 500
+            codeString = "Failed to sync configuration, please check the interface of config/objectfile."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
         response_code = json.loads(response.text).get("code")
         if response_code == None:
             codeNum = 500

@@ -116,7 +116,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 if d_conf.file_path not in DIRECTORY_FILE_PATH_LIST:
                     exist_host[host_id].append(d_conf.file_path)
                 else:
-                    codeNum, codeString, file_paths = object_parse.get_pam_files(d_conf, host_id)
+                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id)
                     if len(file_paths) == 0:
                         base_rsp = BaseResponse(codeNum, codeString)
                         return base_rsp, codeNum
@@ -129,7 +129,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                     conf_list.append(d_conf.file_path)
                     exist_host[host_id] = conf_list
                 else:
-                    codeNum, codeString, file_paths = object_parse.get_pam_files(d_conf, host_id)
+                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id)
                     if len(file_paths) == 0:
                         base_rsp = BaseResponse(codeNum, codeString)
                         return base_rsp, codeNum
@@ -146,7 +146,14 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
         url = conf_tools.load_url_by_conf().get("collect_url")
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        try:
+            response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            codeNum = 500
+            codeString = "Failed to obtain the actual configuration, please check the interface of config/collect."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
 
         response_code = json.loads(response.text).get("code")
         if response_code == None:
