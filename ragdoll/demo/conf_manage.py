@@ -2,7 +2,6 @@ import requests
 import json
 
 from ragdoll.log.log import LOGGER
-from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.conf import Conf
 from ragdoll.models.confs import Confs
@@ -19,7 +18,7 @@ class ConfManage(object):
         contents_list = args.contents
         host_id_list = args.host_id
         if not domain_name or not file_path_list:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for conf_add!\n")
             return
         
         conf_file = []
@@ -32,7 +31,7 @@ class ConfManage(object):
                 conf = Conf(file_path=file_path_list[i], host_id=host_id_list[i])
                 conf_file.append(conf)
         else:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error as invlid param!\n")
             return
 
         data = Confs(domain_name=domain_name, conf_files=conf_file)
@@ -46,7 +45,7 @@ class ConfManage(object):
     def conf_query(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for conf_query!\n")
             return
 
         data = DomainName(domain_name=domain_name)
@@ -64,7 +63,7 @@ class ConfManage(object):
         domain_name = args.domain_name
         file_path_list = args.file_path
         if not domain_name or not file_path_list:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for conf_delete!\n")
             return
         
         conf_files = []
@@ -87,7 +86,7 @@ class ConfManage(object):
         domain_name = args.domain_name
         file_path_list = args.file_path
         if not domain_name or not file_path_list:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for conf_changelog!\n")
             return
         
         conf_files = []

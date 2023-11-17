@@ -2,7 +2,6 @@ import requests
 import json
 
 from ragdoll.log.log import LOGGER
-from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.conf_host import ConfHost
 from ragdoll.demo.conf import server_port
@@ -14,7 +13,7 @@ class ConfSync(object):
         domain_name = args.domain_name
         host_id_list = args.host_id
         if not domain_name or not host_id_list:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for sync_conf!\n")
             return
 
         host_ids = []
@@ -34,7 +33,7 @@ class ConfSync(object):
     def sync_status(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for sync_status!\n")
             return
         
         data = DomainName(domain_name=domain_name)
@@ -52,7 +51,7 @@ class ConfSync(object):
         domain_name = args.domain_name
         host_id_list = args.host_id
         if not domain_name or not host_id_list:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for query_real_conf!\n")
             return
         
         host_ids = []

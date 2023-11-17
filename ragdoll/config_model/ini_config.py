@@ -11,7 +11,6 @@
 # ******************************************************************************/
 
 import re
-import json
 import copy
 from collections import OrderedDict as _default_dict
 

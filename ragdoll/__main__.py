@@ -27,7 +27,7 @@ def main():
 def load_prepare():
     git_dir, git_user_name, git_user_email = load_conf()
     prepare = Prepare(git_dir)
-    prepare.mdkir_git_warehose(git_user_name, git_user_email)
+    prepare.mkdir_git_warehose(git_user_name, git_user_email)
 
 
 def load_yang():

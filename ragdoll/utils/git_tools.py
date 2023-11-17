@@ -93,16 +93,14 @@ class GitTools(object):
     # Execute the shell command and return the execution node and output
     def run_shell_return_output(self, shell):
         cmd = subprocess.Popen(shell, stdout=subprocess.PIPE, shell=True)
-        LOGGER.debug("################# shell cmd ################")
         LOGGER.debug("subprocess.Popen({shell}, stdout=subprocess.PIPE, shell=True)".format(shell=shell))
-        LOGGER.debug("################# shell cmd end ################")
         output, err = cmd.communicate()
         return output
 
     def makeGitMessage(self, path, logMessage):
         if len(logMessage) == 0:
             return "the logMessage is null"
-        LOGGER.debug("AAAA path is : {}".format(path))
+        LOGGER.debug("path is : {}".format(path))
         cwdDir = os.getcwd()
         os.chdir(self._target_dir)
         LOGGER.debug(os.getcwd())
@@ -113,8 +111,8 @@ class GitTools(object):
         count = logMessage.count("commit")
         lines = logMessage.split('\n')
 
+        LOGGER.debug("count is : {}".format(count))
         for index in range(0, count):
-            LOGGER.debug("AAAAAAAAAAAAAAA count is : {}".format(index))
             gitMessage = GitLogMessage()
             for temp in range(0, singleLogLen):
                 line = lines[index * singleLogLen + temp]

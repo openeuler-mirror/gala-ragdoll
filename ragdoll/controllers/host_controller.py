@@ -1,8 +1,6 @@
 import connexion
-import six
 import os
 import json
-import re
 import ast
 
 from ragdoll.log.log import LOGGER
@@ -61,7 +59,6 @@ def add_host_in_domain(body=None):  # noqa: E501
         if os.path.isfile(hostPath):
             isContained = Format.isContainedHostIdInfile(hostPath, host.host_id)
             if isContained:
-                LOGGER.debug("##########isContained###############")
                 failedHost.append(host.host_id)
             else:
                 Format.addHostToFile(hostPath, host)
@@ -139,7 +136,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
             try:
                 os.remove(hostPath)
             except OSError as ex:
-                #logging.error("the host delete failed")
+                LOGGER.error("Failed to delete hostpath as OS error: {0}".format(err))
                 codeNum = 500
                 base_rsp = BaseResponse(codeNum, "The host delete failed.")
                 return base_rsp, codeNum

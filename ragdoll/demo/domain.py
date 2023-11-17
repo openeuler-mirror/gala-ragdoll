@@ -12,7 +12,7 @@ class DomainManage(object):
         domain_name_list = args.domain_name
         priority_list = args.priority
         if len(domain_name_list) != len(priority_list):
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for domain_create!\n")
             return
 
         data = []

@@ -80,10 +80,7 @@ class ConfTools(object):
     def listToDict(self, manaConfs):
         res = {}
         LOGGER.debug("manaConfs is : {}".format(manaConfs))
-        LOGGER.debug("the typr of manaConfs is : {}".format(type(manaConfs)))
         for d_conf in manaConfs:
-            LOGGER.debug("d_conf is : {}".format(d_conf))
-            LOGGER.debug("the type of d_conf is : {}".format(type(d_conf)))
             path = d_conf.get(PATH)
             value = d_conf.get(EXCEPTED_VALUE).strip()
             level = path.split("/")
@@ -120,8 +117,6 @@ class ConfTools(object):
         """
         realConfWithFeature = {}
         LOGGER.debug("featureList is : {}".format(featureList))
-        lenFeature = len(featureList)
-        tempRealConf = realConfDict
         d_real_file = {}
         d_real_file[featureList[1]] = realConfDict
         d_real_feature = {}
@@ -173,11 +168,8 @@ class ConfTools(object):
                     ]
         """
         res = []
-        conf_nums = len(realConfResText)
         LOGGER.debug("realConfResText is : {}".format(realConfResText))
         for d_conf in realConfResText:
-            LOGGER.debug("d_conf is : {}".format(d_conf))
-            LOGGER.debug("d_conf 's type is : {}".format(type(d_conf)))
             domainName = d_conf.get("domainName")
             hostId = d_conf.get("hostID")
             conf_base_infos = d_conf.get("confBaseInfos")
@@ -187,7 +179,6 @@ class ConfTools(object):
             for d_conf_info in conf_base_infos:
                 paths = d_conf_info.get("path").split(" ")
                 confContents = json.loads(d_conf_info.get("confContents"))
-                LOGGER.debug("confContents is : {}".format(confContents))
                 for d_path in paths:
                     x_path = os.path.join(domainName, d_path)
                     remove_feature_path = d_path.split("/")[2:]
@@ -253,15 +244,12 @@ class ConfTools(object):
             input: '/etc/yum.repos.d/openEuler.repo'
             output: openEuler-repos  1.0  3.0.oe1.aarch64
         """
-        res = ""
         if not os.path.exists(path):
             return None
         cmd = "rpm -qf {}".format(path)
         gitTools = GitTools()
         package_string = gitTools.run_shell_return_output(cmd).decode()
         LOGGER.debug("package_string is : {}".format(package_string))
-        # lines = returnCode.rsplit(STRIKETHROUGH)
-        # res = lines[0]
         if 'not owned by any package' in package_string:
             return None, None, None
         pkg, arch = Format.rsplit(package_string, Format.arch_sep(package_string))
@@ -270,7 +258,6 @@ class ConfTools(object):
         pkg, release = Format.rsplit(pkg, '-')
         name, version = Format.rsplit(pkg, '-')
         # If the value of epoch needs to be returned separately,
-        # epoch, version = version.split(':', 1) if ":" in version else ['0', version]
         return name, release, version
 
     def getFileAttr(self, path):
@@ -315,7 +302,6 @@ class ConfTools(object):
                 d_lines = line.split(RightParen + TWOSPACE)
                 for d_line in d_lines:
                     d_line = d_line.lstrip()
-                    # print("d_line is : {}".format(d_line))
                     if d_line.startswith(ACCESS):
                         fileAttr = d_line.split(FS)[0].split(LeftParen)[1]
                     elif d_line.startswith(UID):
@@ -446,9 +432,6 @@ class ConfTools(object):
         value = ""
         for count in range(0, len(real_conf)):
             d_real = real_conf[count]
-            # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-            # print("d_real is : {}".format(d_real))
-            # print("path is : {}".format(path))
             if d_real.path == path:
                 index = count
                 value = d_real.real_value.strip()
