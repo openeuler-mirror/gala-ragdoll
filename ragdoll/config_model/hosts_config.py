@@ -19,7 +19,6 @@ import json
 
 from ragdoll.config_model.base_handler_config import BaseHandlerConfig
 from ragdoll.log.log import LOGGER
-from ragdoll.utils.yang_module import YangModule
 from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED
 
 ipv4 = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
@@ -64,7 +63,7 @@ class HostsConfig(BaseHandlerConfig):
             ip_domain = re.split("\s+", line)
             if len(ip_domain) == 1:
                 error_conf = True
-                LOGGER.warning("ip_domain contains incorrect formatting")
+                LOGGER.error("ip_domain contains incorrect formatting")
                 break
             ip = ip_domain[0]
             if ipv4.match(ip) or ipv6.match(ip):
@@ -73,7 +72,7 @@ class HostsConfig(BaseHandlerConfig):
                 res[ip] = str_value
             else:
                 error_conf = True
-                LOGGER.warning("ip does not meet the ipv4 or ipv6 format")
+                LOGGER.error("ip does not meet the ipv4 or ipv6 format")
                 break
 
         return error_conf, res

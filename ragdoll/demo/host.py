@@ -2,7 +2,6 @@ import requests
 import json
 
 from ragdoll.log.log import LOGGER
-from ragdoll.models.domain import Domain
 from ragdoll.models.domain_name import DomainName
 from ragdoll.models.host import Host
 from ragdoll.models.host_infos import HostInfos
@@ -17,7 +16,7 @@ class HostManage(object):
         ipv6_list = args.ipv6
         
         if len(host_id_list) != len(ip_list):
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for adding host!\n")
             return
         
         host_infos = []
@@ -35,7 +34,7 @@ class HostManage(object):
     def host_query(self, args):
         domain_name = args.domain_name
         if not domain_name:
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for qeurying host!\n")
             return
         
         data = DomainName(domain_name=domain_name)
@@ -44,7 +43,7 @@ class HostManage(object):
         response = requests.post(url, data=json.dumps(data, cls=JSONEncoder), headers=headers)
 
         if response.status_code != 200:
-            LOGGER.warning(json.loads(response.text).get("msg"))
+            LOGGER.error(json.loads(response.text).get("msg"))
         else:
             LOGGER.debug("The following host are managed in domain_name:{}.".format(json.loads(response.text)))
         return
@@ -56,7 +55,7 @@ class HostManage(object):
         ipv6_list = args.ipv6
         
         if len(host_id_list) != len(ip_list):
-            LOGGER.error("ERROR: Input error!\n")
+            LOGGER.error("ERROR: Input error for deleting host!\n")
             return
         
         host_infos = []

@@ -156,16 +156,6 @@ class Format(object):
         return isHostIdExist
 
     @staticmethod
-    def is_exists_file(d_file):
-        if os.path.exists(d_file):
-            return True
-        if os.path.islink(d_file):
-            LOGGER.debug("file: %s is a symlink, skipped!", d_file)
-            return False
-        LOGGER.error("file: %s does not exist.", d_file)
-        return False
-
-    @staticmethod
     def get_file_content_by_readlines(d_file):
         """
         desc: remove empty lines and comments from d_file
@@ -249,6 +239,7 @@ class Format(object):
         """
         desc: Query hostinfo by domainname
         """
+        LOGGER.debug("Get hostinfo by domain : {}".format(domainName))
         TARGETDIR = Format.get_git_dir()
         hostlist = []
         domainPath = os.path.join(TARGETDIR, domainName)
@@ -269,13 +260,14 @@ class Format(object):
             LOGGER.error("OS error: {0}".format(err))
             return hostlist
         if len(hostlist) == 0:
-            LOGGER.debug("hostlist is empty : {}".format(hostlist))
+            LOGGER.debug("hostlist is empty !")
         else:
             LOGGER.debug("hostlist is : {}".format(hostlist))
         return hostlist
 
     @staticmethod
     def get_manageconf_by_domain(domain):
+        LOGGER.debug("Get managerconf by domain : {}".format(domain))
         expected_conf_lists = ConfFiles(domain_name=domain, conf_files=[])
         TARGETDIR = Format.get_git_dir()
         domainPath = os.path.join(TARGETDIR, domain)
@@ -301,6 +293,7 @@ class Format(object):
 
     @staticmethod
     def get_realconf_by_domain_and_host(domain, exist_host):
+        LOGGER.debug("Get realconf by domain : {} and host : {}.".format(domain, exist_host))
         res = []
         conf_files = Format.get_manageconf_by_domain(domain)
 
@@ -318,7 +311,6 @@ class Format(object):
                 d_conf_contents = json.loads(d_conf_cs)
                 for d_conf_key, d_conf_value in d_conf_contents.items():
                     conf_list.append(d_conf_key)
-        LOGGER.debug("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
         for d_host in exist_host:
@@ -465,7 +457,7 @@ class Format(object):
         code_num = 200
         base_resp = None
         # get the host info in domain
-        LOGGER.debug("############## get the host in domain ##############")
+        LOGGER.debug("Get the conf by domain: {}.".format(domain))
         host_ids = Format.get_hostid_list_by_domain(domain)
         if not host_ids:
             code_num = 404
@@ -474,7 +466,6 @@ class Format(object):
             return base_resp, code_num, list()
 
         # get the managent conf in domain
-        LOGGER.debug("############## get the managent conf in domain ##############")
         man_conf_res_text = Format.get_manageconf_by_domain(domain)
         manage_confs = man_conf_res_text.get("conf_files")
 

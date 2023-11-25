@@ -15,7 +15,7 @@ class Prepare(object):
     def target_dir(self, target_dir):
         self._target_dir = target_dir
 
-    def mdkir_git_warehose(self, username, useremail):
+    def mkdir_git_warehose(self, username, useremail):
         res = True
         LOGGER.debug("self._target_dir is : {}".format(self._target_dir))
         if os.path.exists(self._target_dir):
@@ -26,7 +26,7 @@ class Prepare(object):
         git_tools = GitTools(self._target_dir)
         mkdir_code = git_tools.run_shell_return_code(cmd1)
         git_code = self.git_init(username, useremail)
-        if mkdir_code != 0:
+        if mkdir_code != 0 or not git_code:
             res = False
         return res
 

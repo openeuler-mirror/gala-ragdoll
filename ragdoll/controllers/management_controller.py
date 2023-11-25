@@ -105,7 +105,6 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     # content is empty
     if len(contents_list_null) > 0:
         # get the real conf in host
-        LOGGER.debug("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
         LOGGER.debug("contents_list_null is : {}".format(contents_list_null))
@@ -225,7 +224,6 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
-    LOGGER.debug("*******************************************")
     LOGGER.debug("successConf is : {}".format(successConf))
     LOGGER.debug("failedConf is : {}".format(failedConf))
     if len(successConf) == 0:
@@ -312,7 +310,7 @@ def upload_management_confs_in_domain():  # noqa: E501
             base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
             return base_rsp, codeNum
         except Exception as ex:
-            LOGGER.error("OS error: {}".format(ex))
+            LOGGER.error("Other error: {}".format(ex))
             codeNum = 500
             base_rsp = BaseResponse(codeNum, "read file error: {0}".format(ex))
             return base_rsp, codeNum
@@ -339,7 +337,6 @@ def upload_management_confs_in_domain():  # noqa: E501
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
-    LOGGER.debug("*******************************************")
     LOGGER.debug("successConf is : {}".format(successConf))
     LOGGER.debug("failedConf is : {}".format(failedConf))
     if len(successConf) == 0:
@@ -409,23 +406,22 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(400, "The yang module does not exist")
         return base_rsp
 
-    file_path_list = yang_modules.getFilePathInModdule(module_lists)
     LOGGER.debug("module_lists is : {}".format(module_lists))
     for conf in conf_files:
         module = yang_modules.getModuleByFilePath(conf.file_path)
         features = yang_modules.getFeatureInModule(module)
         features_path = os.path.join(domain_path, "/".join(features))
-        LOGGER.debug("domain_path is : {}".format(domain_path))
 
         if os.path.isfile(features_path):
-            LOGGER.debug("it's a normal file")
+            LOGGER.debug("it's a normal file : {}".format(features_path))
             try:
                 os.remove(features_path)
             except OSError as ex:
-                # logging.error("the path remove failed")
+                LOGGER.error("Failed to remove path, as OSError: {}".format(str(ex)))
                 break
             successConf.append(conf.file_path)
         else:
+            LOGGER.debug("it's a not normal file : {}".format(features_path))
             failedConf.append(conf.file_path)
 
     # git commit message
@@ -446,7 +442,6 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         codeString = Format.splicErrorString("confs", "delete management conf", successConf, failedConf)
         codeString += "\n The reason for the failure is: these paths do not exist."
     base_rsp = BaseResponse(codeNum, codeString)
-    # logging.info('delete management conf in {domain}'.format(domain=domain))
 
     return base_rsp, codeNum
 
@@ -528,7 +523,7 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
 
     #  check whether the domain exists
     domain = body.domain_name
-    LOGGER.debug("body is : {}".format(body))
+    LOGGER.debug("Query changelog of conf body is : {}".format(body))
 
     # check the input domain
     checkRes = Format.domainCheck(domain)
@@ -546,12 +541,10 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
     # entire domain is queried. Otherwise, the historical records of the specified file are queried.
     conf_files = body.conf_files
     LOGGER.debug("conf_files is : {}".format(conf_files))
-    LOGGER.debug("conf_files's type is : {}".format(type(conf_files)))
     conf_files_list = []
     if conf_files:
         for d_conf in conf_files:
             LOGGER.debug("d_conf is : {}".format(d_conf))
-            LOGGER.debug("d_conf type is : {}".format(type(d_conf)))
             conf_files_list.append(d_conf.file_path)
     success_conf = []
     failed_conf = []
@@ -560,11 +553,9 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
                                            conf_base_infos=[])
     yang_modules = YangModule()
     for root, dirs, files in os.walk(domain_path):
-        conf_base_infos = []
         if len(files) > 0 and len(root.split('/')) > 3:
             if "hostRecord.txt" in files:
                 continue
-            confPath = root.split('/', 3)[3]
             for d_file in files:
                 feature = os.path.join(root.split('/')[-1], d_file)
                 d_module = yang_modules.getModuleByFeature(feature)
@@ -585,9 +576,7 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
                                               change_log=gitMessage)
                 expected_conf_lists.conf_base_infos.append(conf_base_info)
 
-    LOGGER.debug("########################## expetedConfInfo ####################")
     LOGGER.debug("expected_conf_lists is : {}".format(expected_conf_lists))
-    LOGGER.debug("########################## expetedConfInfo  end ####################")
 
     if len(success_conf) == 0:
         codeNum = 500

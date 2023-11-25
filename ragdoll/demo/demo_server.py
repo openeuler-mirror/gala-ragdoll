@@ -1,6 +1,5 @@
 import connexion
 
-from ragdoll.models.conf_host import ConfHost
 from ragdoll.log.log import LOGGER
 
 def _read_file(path):

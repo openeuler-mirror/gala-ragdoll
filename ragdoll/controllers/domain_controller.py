@@ -1,8 +1,6 @@
 import connexion
-import six
 import os
 import shutil
-import logging
 
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain import Domain  # noqa: E501
@@ -11,11 +9,6 @@ from ragdoll.controllers.format import Format
 from ragdoll.utils.git_tools import GitTools
 
 TARGETDIR = GitTools().target_dir
-
-# logging.basicConfig(filename='log.log',
-#                     format='%(asctime)s - %(name)s - %(levelname)s -%(module)s:  %(message)s',
-#                     datefmt='%Y-%m-%d %H:%M:%S %p',
-#                     level=10)
 
 def create_domain(body=None):  # noqa: E501
     """create domain

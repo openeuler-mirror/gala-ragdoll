@@ -1,7 +1,5 @@
 import libyang
 import os
-import sys
-import importlib
 import operator
 
 from ragdoll.log.log import LOGGER
@@ -95,10 +93,6 @@ class YangModule(object):
                 if files_tail != "yang":
                     continue
                 modulePath = os.path.join(self._yang_dir, d_file)
-                # grammar_res = self.check_yang_grammar(modulePath)
-                # print("grammar_res is : {}".format(grammar_res))
-                # if not grammar_res:
-                #     continue
                 fo = open(modulePath, 'r+')
                 module = self._ctx.parse_module_file(fo)
                 module_list.append(module)
@@ -183,7 +177,6 @@ class YangModule(object):
                 continue
             xpath.append(path)
 
-        # print("xpath is : {}".format(xpath))
         return xpath
 
     def getFeatureInModule(self, modules):
@@ -250,9 +243,8 @@ class YangModule(object):
             }
         """
         res = {}
+        LOGGER.debug("modules are : {}".format(modules))
         for d_mod in modules:
-            LOGGER.debug("d_mod is : {}".format(d_mod))
-            LOGGER.debug("d_mod's type is : {}".format(type(d_mod)))
             feature_list = self.getFeatureInModule(d_mod)
             module_name = d_mod.name()
             xpath = ""

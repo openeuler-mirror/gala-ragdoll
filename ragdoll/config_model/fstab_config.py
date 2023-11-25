@@ -13,7 +13,6 @@
 import re
 from ragdoll.config_model.base_handler_config import BaseHandlerConfig
 from ragdoll.const.conf_handler_const import FSTAB_COLUMN_NUM
-from ragdoll.log.log import LOGGER
 
 class FstabConfig(BaseHandlerConfig):
     """

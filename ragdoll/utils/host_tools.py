@@ -75,9 +75,9 @@ class HostTools(object):
                             }]
         """
         res = []
+        LOGGER.debug("The domainHost is : {}".format(domainHost))
         for d_host in domainHost:
             hostId = int(d_host.get('host_id'))
-            LOGGER.debug("the host Id is : {}".format(hostId))
             d_host = {}
             d_host["hostId"] = hostId
             res.append(hostId)
