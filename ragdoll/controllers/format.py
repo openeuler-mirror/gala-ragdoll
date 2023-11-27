@@ -260,9 +260,9 @@ class Format(object):
             LOGGER.error("OS error: {0}".format(err))
             return hostlist
         if len(hostlist) == 0:
-            LOGGER.debug("hostlist is empty !")
+            LOGGER.debug("Hostlist is empty !")
         else:
-            LOGGER.debug("hostlist is : {}".format(hostlist))
+            LOGGER.debug("Hostlist is : {}".format(hostlist))
         return hostlist
 
     @staticmethod
@@ -288,7 +288,7 @@ class Format(object):
                     conf = ConfFile(file_path=file_path, contents=contents)
                     expected_conf_lists.conf_files.append(conf.to_dict())
 
-        LOGGER.debug("expected_conf_lists is :{}".format(expected_conf_lists))
+        LOGGER.debug("Expected_conf_lists is :{}".format(expected_conf_lists))
         return expected_conf_lists.to_dict()
 
     @staticmethod
