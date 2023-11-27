@@ -192,7 +192,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
     # git commit message
     if len(containedInHost) > 0:
         git_tools = GitTools()
-        commit_code = git_tools.gitCommit("Delet the host in {} domian, ".format(domain) +
+        commit_code = git_tools.gitCommit("Delete the host in {} domian, ".format(domain) +
                                 "the host including : {}".format(containedInHost))
 
     base_rsp = BaseResponse(codeNum, codeString)
