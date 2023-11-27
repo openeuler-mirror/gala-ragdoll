@@ -413,7 +413,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         features_path = os.path.join(domain_path, "/".join(features))
 
         if os.path.isfile(features_path):
-            LOGGER.debug("it's a normal file : {}".format(features_path))
+            LOGGER.info("It's a normal file : {}".format(features_path))
             try:
                 os.remove(features_path)
             except OSError as ex:
@@ -421,7 +421,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
                 break
             successConf.append(conf.file_path)
         else:
-            LOGGER.debug("it's a not normal file : {}".format(features_path))
+            LOGGER.error("It's a not normal file : {}".format(features_path))
             failedConf.append(conf.file_path)
 
     # git commit message
@@ -580,7 +580,7 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
 
     if len(success_conf) == 0:
         codeNum = 500
-        base_rsp = BaseResponse(codeNum, "Faled to uery the changelog of the configure in the domain.")
+        base_rsp = BaseResponse(codeNum, "Failed to uery the changelog of the configure in the domain.")
         return base_rsp, codeNum
     if len(failed_conf) > 0:
         codeNum = 400
