@@ -44,5 +44,4 @@ class TextConfig(BaseHandlerConfig):
         for value in self.conf:
             if value is not None:
                 content = content + value + "\n"
-        content = content + '\n'
         return content

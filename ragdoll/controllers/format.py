@@ -266,6 +266,28 @@ class Format(object):
         return hostlist
 
     @staticmethod
+    def get_host_id_by_ip(ip, domainName):
+        """
+        desc: Query hostinfo by host ip
+        """
+        LOGGER.debug("Get hostinfo by ip : {}".format(ip))
+        TARGET_DIR = Format.get_git_dir()
+        hostlist = []
+        domainPath = os.path.join(TARGET_DIR, domainName)
+        hostPath = os.path.join(domainPath, "hostRecord.txt")
+        if not os.path.isfile(hostPath) or os.stat(hostPath).st_size == 0:
+            return hostlist
+        try:
+            with open(hostPath, 'r') as d_file:
+                for line in d_file.readlines():
+                    json_str = json.loads(line)
+                    host_json = ast.literal_eval(json_str)
+                    if host_json["ip"] == ip:
+                        return host_json["host_id"]
+        except OSError as err:
+            LOGGER.error("OS error: {0}".format(err))
+
+    @staticmethod
     def get_manageconf_by_domain(domain):
         LOGGER.debug("Get managerconf by domain : {}".format(domain))
         expected_conf_lists = ConfFiles(domain_name=domain, conf_files=[])
@@ -453,7 +475,7 @@ class Format(object):
         return host_ids
 
     @staticmethod
-    def _get_domain_conf(domain):
+    def get_domain_conf(domain):
         code_num = 200
         base_resp = None
         # get the host info in domain
@@ -548,6 +570,57 @@ class Format(object):
             host_sync_status.sync_status.append(conf_is_synced)
 
     @staticmethod
+    def convert_real_conf(conf_model, conf_type, conf_info, conf_path, parse):
+        # load yang model info
+        yang_info = parse._yang_modules.getModuleByFilePath(conf_path)
+        conf_model.load_yang_model(yang_info)
+
+        # load conf info
+        if conf_type == "kv":
+            spacer_type = parse._yang_modules.getSpacerInModdule([yang_info])
+            conf_model.read_conf(conf_info, spacer_type, yang_info)
+        else:
+            conf_model.read_conf(conf_info)
+
+    @staticmethod
+    def deal_conf_sync_status_for_db(conf_model, d_conf, d_conf_path, directory_conf_is_synced, host_sync_status,
+                                     manage_confs):
+        comp_res = ""
+        if d_conf_path in DIRECTORY_FILE_PATH_LIST:
+            confContents = d_conf.get("conf_contens")
+            directory_conf_contents = ""
+            for d_man_conf in manage_confs:
+                d_man_conf_path = d_man_conf.get("file_path")
+                if d_man_conf_path != d_conf_path:
+                    # if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
+                    continue
+                else:
+                    directory_conf_is_synced.file_path = d_conf_path
+                    directory_conf_contents = d_man_conf.get("contents")
+
+            directory_conf_contents_dict = json.loads(directory_conf_contents)
+
+            for dir_conf_content_key, dir_conf_content_value in directory_conf_contents_dict.items():
+                if dir_conf_content_key not in confContents.keys():
+                    single_conf = SingleConfig(single_file_path=dir_conf_content_key,
+                                               single_is_synced=NOT_SYNCHRONIZE)
+                    directory_conf_is_synced.single_conf.append(single_conf)
+                else:
+                    dst_conf = confContents.get(dir_conf_content_key)
+                    comp_res = conf_model.conf_compare(dir_conf_content_value, dst_conf)
+                    single_conf = SingleConfig(single_file_path=dir_conf_content_key, single_is_synced=comp_res)
+                    directory_conf_is_synced.single_conf.append(single_conf)
+        else:
+            for d_man_conf in manage_confs:
+                if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
+                    continue
+                contents = d_man_conf.get("contents")
+                comp_res = conf_model.conf_compare(contents, json.dumps(d_conf.get("conf_contens")))
+            conf_is_synced = ConfIsSynced(file_path=d_conf_path,
+                                          is_synced=comp_res)
+            host_sync_status.sync_status.append(conf_is_synced)
+
+    @staticmethod
     def get_conf_type_model(d_conf_path, object_parse):
         for dir_path in DIRECTORY_FILE_PATH_LIST:
             if str(d_conf_path).find(dir_path) != -1:
@@ -603,3 +676,146 @@ class Format(object):
             else:
                 conf_sync_res.result = "FAILED"
             host_sync_result.sync_result.append(conf_sync_res)
+
+    @staticmethod
+    def deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse):
+        sync_conf_url = conf_tools.load_url_by_conf().get("batch_sync_url")
+        headers = {"Content-Type": "application/json"}
+
+        # 组装参数
+        sync_config_request = {"host_ids": exist_host, "file_path_infos": list()}
+        for file_path, contents in file_path_infos.items():
+            if file_path in DIRECTORY_FILE_PATH_LIST:
+                for directory_file_path, directory_content in json.loads(contents).items():
+                    content = object_parse.parse_json_to_conf(directory_file_path, directory_content)
+                    single_file_path_info = {"file_path": directory_file_path, "content": content}
+                    sync_config_request["file_path_infos"].append(single_file_path_info)
+            else:
+                content = object_parse.parse_json_to_conf(file_path, contents)
+                single_file_path_info = {"file_path": file_path, "content": content}
+                sync_config_request["file_path_infos"].append(single_file_path_info)
+        # 调用zeus接口
+        try:
+            sync_response = requests.put(sync_conf_url, data=json.dumps(sync_config_request), headers=headers)
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            codeNum = 500
+            codeString = "Failed to sync configuration, please check the interface of config/sync."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
+        # 处理响应
+        resp_code = json.loads(sync_response.text).get('code')
+        resp = json.loads(sync_response.text).get('data').get('resp')
+        if resp_code != "200":
+            codeNum = 500
+            codeString = "Failed to sync configuration, please check the interface of config/sync."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
+
+        # 重新构建返回值，目录文件返回值重新构造
+        sync_res = []
+        for host_result in resp:
+            syncResult = []
+            conf_sync_res_list = []
+            sync_result_list = host_result.get("syncResult")
+            dir_name = ""
+            for single_result in sync_result_list:
+                dir_name = os.path.dirname(single_result.get("filePath"))
+                if dir_name in DIRECTORY_FILE_PATH_LIST and single_result.get("result") == "SUCCESS":
+                    conf_sync_res_list.append("SUCCESS")
+                elif dir_name in DIRECTORY_FILE_PATH_LIST and single_result.get("result") == "FAIL":
+                    conf_sync_res_list.append("FAILED")
+                else:
+                    syncResult.append(single_result)
+            if conf_sync_res_list:
+                if "FAILED" in conf_sync_res_list:
+                    directory_sync_result = {"filePath": dir_name, "result": "FAILED"}
+                else:
+                    directory_sync_result = {"filePath": dir_name, "result": "SUCCESS"}
+                syncResult.append(directory_sync_result)
+            single_host_sync_result = {"host_id": host_result.get("host_id"), "syncResult": syncResult}
+            sync_res.append(single_host_sync_result)
+        return sync_res
+
+    @staticmethod
+    def addHostSyncStatus(conf_tools, domain, host_infos):
+        add_host_sync_status_url = conf_tools.load_url_by_conf().get("add_host_sync_status_url")
+        headers = {"Content-Type": "application/json"}
+        # 数据入库
+        try:
+            for host in host_infos:
+                host_sync_status = {
+                    "host_id": host.host_id,
+                    "host_ip": host.ip,
+                    "domain_name": domain,
+                    "sync_status": 0
+                }
+                add_host_sync_status_response = requests.post(add_host_sync_status_url,
+                                                              data=json.dumps(host_sync_status), headers=headers)
+                resp_code = json.loads(add_host_sync_status_response.text).get('code')
+                LOGGER.info("resp_code is {}".format(resp_code))
+                if resp_code != "200":
+                    LOGGER.error(
+                        "Failed to add host sync status, please check the interface of /manage/host/sync/status/add.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error("Failed to add host sync status, please check the interface of /manage/host/sync/status/add.")
+
+    @staticmethod
+    def deleteHostSyncStatus(conf_tools, domain, hostInfos):
+        delete_host_sync_status_url = conf_tools.load_url_by_conf().get("delete_host_sync_status_url")
+        headers = {"Content-Type": "application/json"}
+        # 数据入库
+        try:
+            for host in hostInfos:
+                delete_host_sync_status = {
+                    "host_id": host.host_id,
+                    "domain_name": domain
+                }
+                delete_host_sync_status_response = requests.post(delete_host_sync_status_url,
+                                                                 data=json.dumps(delete_host_sync_status),
+                                                                 headers=headers)
+                resp_code = json.loads(delete_host_sync_status_response.text).get('code')
+                if resp_code != "200":
+                    LOGGER.error(
+                        "Failed to delete host sync status, please check the interface of "
+                        "/manage/host/sync/status/delete.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to delete host sync status, please check the interface of "
+                "/manage/host/sync/status/delete.")
+
+    @staticmethod
+    def diff_mangeconf_with_realconf_for_db(domain, real_conf_res_text, manage_confs):
+        sync_status = SyncStatus(domain_name=domain,
+                                 host_status=[])
+        from ragdoll.utils.object_parse import ObjectParse
+
+        for d_real_conf in real_conf_res_text:
+            host_id = d_real_conf.get('host_id')
+            host_sync_status = HostSyncStatus(host_id=host_id,
+                                              sync_status=[])
+            d_real_conf_base = d_real_conf.get('conf_base_infos')
+            for d_conf in d_real_conf_base:
+                directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
+                d_conf_path = d_conf.get('file_path')
+
+                object_parse = ObjectParse()
+                # get the conf type and model
+                conf_type, conf_model = Format.get_conf_type_model(d_conf_path, object_parse)
+
+                Format.deal_conf_sync_status_for_db(conf_model, d_conf, d_conf_path, directory_conf_is_synced,
+                                                    host_sync_status, manage_confs)
+
+                if len(directory_conf_is_synced.single_conf) > 0:
+                    synced_flag = SYNCHRONIZED
+                    for single_config in directory_conf_is_synced.single_conf:
+                        if single_config.single_is_synced == SYNCHRONIZED:
+                            continue
+                        else:
+                            synced_flag = NOT_SYNCHRONIZE
+                    directory_conf_is_synced.is_synced = synced_flag
+                    host_sync_status.sync_status.append(directory_conf_is_synced)
+            sync_status.host_status.append(host_sync_status)
+        return sync_status

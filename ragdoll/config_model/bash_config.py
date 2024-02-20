@@ -59,8 +59,7 @@ class BashConfig(BaseHandlerConfig):
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
         for src_conf in src_conf_dict:
-            str_src_conf = str(src_conf)
-            if str(dst_conf_dict).find(str_src_conf) == -1:
+            if src_conf not in dst_conf_dict:
                 res = NOT_SYNCHRONIZE
                 break
         return res

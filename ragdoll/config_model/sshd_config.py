@@ -83,7 +83,7 @@ class SshdConfig():
         self.conf = conf_list
 
     @staticmethod
-    def conf_compare(dst_conf, src_conf):
+    def conf_compare(src_conf, dst_conf):
         """
         desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
         return：dst_conf和src_conf相同返回SYNCHRONIZED
@@ -93,9 +93,9 @@ class SshdConfig():
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
 
-        for dst_conf in dst_conf_dict:
-            str_dst_conf = str(dst_conf)
-            if str(src_conf_dict).find(str_dst_conf) == -1:
+        for src_conf in src_conf_dict:
+            str_src_conf = str(src_conf)
+            if str(dst_conf_dict).find(str_src_conf) == -1:
                 res = NOT_SYNCHRONIZE
                 break
         return res

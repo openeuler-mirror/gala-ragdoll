@@ -303,7 +303,12 @@ paths:
       summary: "query expected configuration value in the current hostId node"
       description: "queryExpectedConfs"
       operationId: "query_excepted_confs"
-      parameters: [ ]
+      parameters:
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/DomainNames"
       responses:
         "200":
           description: "query expected configuration value successfully"
@@ -337,6 +342,50 @@ paths:
             items:
               $ref: "#/definitions/HostSyncResult"
       x-swagger-router-controller: "ragdoll.controllers.confs_controller"
+  /confs/batch/syncConf:
+    put:
+      tags:
+        - "confs"
+      summary: "batch synchronize the configuration information of the configuration domain\
+        \ to the host"
+      description: "batch synchronize the configuration information of the configuration\
+        \ domain to the host"
+      operationId: "batch_sync_conf_to_host_from_domain"
+      parameters:
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/BatchSyncReq"
+      responses:
+        "200":
+          description: "synchronize the configuration items successfully"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/HostSyncResult"
+      x-swagger-router-controller: "ragdoll.controllers.confs_controller"
+  /confs/domain/diff:
+    post:
+      tags:
+        - "confs"
+      summary: "compare domain conf different"
+      description: "compare domain conf different"
+      operationId: "compare_conf_diff"
+      parameters:
+        - in: "body"
+          name: "body"
+          required: false
+          schema:
+            $ref: "#/definitions/CompareConfDiff"
+      responses:
+        "200":
+          description: "compare domain conf different successfully"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/DomainConfigSyncResult"
+      x-swagger-router-controller: "ragdoll.controllers.confs_controller"
   /confs/getDomainStatus:
     post:
       tags:
@@ -349,7 +398,7 @@ paths:
           name: "body"
           required: false
           schema:
-            $ref: "#/definitions/DomainName"
+            $ref: "#/definitions/DomainIp"
       responses:
         "200":
           description: "get the status of the domain successfully"
@@ -418,6 +467,22 @@ definitions:
       domainName:
         type: "string"
         description: "domain name"
+  DomainNames:
+    type: "object"
+    properties:
+      domainNames:
+        type: "array"
+        items:
+          $ref: "#/definitions/DomainName"
+  DomainIp:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      ip:
+        type: "string"
+        description: "ip"
   HostInfos:
     type: "object"
     properties:
@@ -780,6 +845,18 @@ definitions:
     example:
       hostId: "hostId"
       syncStatus: "SUCCESS"
+  DomainConfigSyncResult:
+    type: "object"
+    properties:
+      hostId:
+        type: "integer"
+        description: "the id of host"
+      domainName:
+        type: "string"
+        description: "the domainName of host"
+      syncStatus:
+        type: "integer"
+        description: "the syncStatus of host"
   CollectInfo:
     type: "object"
     properties:
@@ -820,6 +897,35 @@ definitions:
         type: "array"
         items:
           type: "string"
+  CompareConfDiff:
+    type: "object"
+    properties:
+      expectedConfsResp:
+        type: "array"
+        items:
+          $ref: "#/definitions/DomainConfBaseInfos"
+      domainResult:
+        type: object
+        description: "domain real config"
+  DomainConfBaseInfos:
+    type: "object"
+    properties:
+      confBaseInfos:
+        type: array
+        items:
+          $ref: "#/definitions/ConfBase"
+      domainName:
+        type: "string"
+        description: "domain name"
+  ConfBase:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "file path"
+      expectedContents:
+        type: "string"
+        description: "expected contents"
   SyncReq:
     type: "object"
     properties:
@@ -830,6 +936,16 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/SyncHostConfs"
+  BatchSyncReq:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      hostIds:
+        type: "array"
+        items:
+          type: "integer"
   SingleConf:
     type: object
     properties:
