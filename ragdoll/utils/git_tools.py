@@ -19,7 +19,6 @@ class GitTools(object):
 
     def load_git_dir(self):
         cf = configparser.ConfigParser()
-        cf = configparser.ConfigParser()
         if os.path.exists(CONFIG):
             cf.read(CONFIG, encoding="utf-8")
         else:
