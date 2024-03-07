@@ -3,7 +3,9 @@ import re
 import json
 import configparser
 import ast
+
 import requests
+
 from ragdoll.log.log import LOGGER
 
 from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED, CONFIG, \
@@ -314,7 +316,7 @@ class Format(object):
         return expected_conf_lists.to_dict()
 
     @staticmethod
-    def get_realconf_by_domain_and_host(domain, exist_host):
+    def get_realconf_by_domain_and_host(domain, exist_host, access_token):
         LOGGER.debug("Get realconf by domain : {} and host : {}.".format(domain, exist_host))
         res = []
         conf_files = Format.get_manageconf_by_domain(domain)
@@ -342,7 +344,7 @@ class Format(object):
             get_real_conf_body_info.append(get_real_conf_body_infos)
         get_real_conf_body["infos"] = get_real_conf_body_info
         url = conf_tools.load_url_by_conf().get("collect_url")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "access_token": access_token}
         try:
             response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
         except requests.exceptions.RequestException as connect_ex:
@@ -632,9 +634,9 @@ class Format(object):
             return conf_type, conf_model
 
     @staticmethod
-    def deal_sync_res(conf_tools, contents, file_path, host_id, host_sync_result, object_parse):
+    def deal_sync_res(conf_tools, contents, file_path, host_id, host_sync_result, object_parse, access_token):
         sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "access_token": access_token}
         if file_path in DIRECTORY_FILE_PATH_LIST:
             conf_sync_res_list = []
             for directory_file_path, directory_content in json.loads(contents).items():
@@ -678,9 +680,9 @@ class Format(object):
             host_sync_result.sync_result.append(conf_sync_res)
 
     @staticmethod
-    def deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse):
+    def deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token):
         sync_conf_url = conf_tools.load_url_by_conf().get("batch_sync_url")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "access_token": access_token}
 
         # 组装参数
         sync_config_request = {"host_ids": exist_host, "file_path_infos": list()}
@@ -705,10 +707,11 @@ class Format(object):
             return base_rsp, codeNum
         # 处理响应
         resp_code = json.loads(sync_response.text).get('code')
-        resp = json.loads(sync_response.text).get('data').get('resp')
+        resp = json.loads(sync_response.text).get('data')
         if resp_code != "200":
             codeNum = 500
-            codeString = "Failed to sync configuration, please check the interface of config/sync."
+            codeString = f"Failed to sync configuration, reason is {json.loads(sync_response.text).get('message')}, " \
+                         f"please check the interface of config/sync. "
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
 

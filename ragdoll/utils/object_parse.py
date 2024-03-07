@@ -174,14 +174,14 @@ class ObjectParse(object):
 
         return conf_info
 
-    def get_directory_files(self, d_conf, host_id):
+    def get_directory_files(self, d_conf, host_id, access_token):
         file_paths = list()
         conf_tools = ConfTools()
         file_directory = dict()
         file_directory['file_directory'] = d_conf.file_path
         file_directory['host_id'] = host_id
         url = conf_tools.load_url_by_conf().get("object_file_url")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "access_token": access_token}
         try:
             response = requests.post(url, data=json.dumps(file_directory), headers=headers)
         except requests.exceptions.RequestException as connect_ex:
@@ -190,6 +190,7 @@ class ObjectParse(object):
             codeString = "Failed to sync configuration, please check the interface of config/objectfile."
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
+        LOGGER.info(f"Get directory files response: {response.text}")
         response_code = json.loads(response.text).get("code")
         if response_code == None:
             codeNum = 500
@@ -207,5 +208,5 @@ class ObjectParse(object):
             return codeNum, codeString, file_paths
         codeNum = 200
         codeString = "Success get pam.d file paths."
-        file_paths = file_path_reps.get('resp').get('object_file_paths')
+        file_paths = file_path_reps.get('object_file_paths')
         return codeNum, codeString, file_paths

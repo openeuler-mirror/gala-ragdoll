@@ -39,7 +39,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
     :rtype: SyncStatus
     """
-
+    access_token = connexion.request.headers.get("access_token")
     if connexion.request.is_json:
         # body = DomainName.from_dict(connexion.request.get_json())  # noqa: E501
         body = DomainIp.from_dict(connexion.request.get_json())
@@ -57,10 +57,9 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     base_rsp, code_num, manage_confs = Format.get_domain_conf(domain)
     if code_num != 200:
         return base_rsp, code_num
-    LOGGER.info("manage_confs is {}".format(manage_confs))
     # get real conf in host
     host_id = Format.get_host_id_by_ip(ip, domain)
-    real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, [host_id])
+    real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, [host_id], access_token)
     # compare manage conf with real conf
     sync_status = Format.diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs)
 
@@ -149,6 +148,7 @@ def query_real_confs(body=None):  # noqa: E501
 
     :rtype: List[RealConfInfo]
     """
+    access_token = connexion.request.headers.get("access_token")
     if connexion.request.is_json:
         body = ConfHost.from_dict(connexion.request.get_json())  # noqa: E501
 
@@ -199,7 +199,7 @@ def query_real_confs(body=None):  # noqa: E501
         return base_rsp, code_num
 
     # get the management conf in domain
-    res = Format.get_realconf_by_domain_and_host(domain, exist_host)
+    res = Format.get_realconf_by_domain_and_host(domain, exist_host, access_token)
     if len(res) == 0:
         code_num = 400
         res_text = "The real configuration does not found."
@@ -219,6 +219,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     :rtype: List[HostSyncResult]
     """
+    access_token = connexion.request.headers.get("access_token")
     if connexion.request.is_json:
         body = SyncReq.from_dict(connexion.request.get_json())  # noqa: E501
 
@@ -289,7 +290,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
                 file_path_infos[file_path] = contents
 
     object_parse = ObjectParse()
-    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse)
+    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token)
 
     return sync_res
 
@@ -419,6 +420,7 @@ def batch_sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     :rtype: List[HostSyncResult]
     """
+    access_token = connexion.request.headers.get("access_token")
     if connexion.request.is_json:
         body = BatchSyncReq.from_dict(connexion.request.get_json())  # noqa: E501
 
@@ -435,7 +437,7 @@ def batch_sync_conf_to_host_from_domain(body=None):  # noqa: E501
     if code_num != 200:
         return base_rsp, code_num
     # get real conf in host
-    real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids)
+    real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids, access_token)
     # compare manage conf with real conf
     sync_status = Format.diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs)
     # 解析sync_status，取出未同步的数据
@@ -516,6 +518,6 @@ def batch_sync_conf_to_host_from_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(400, "No config needs to be synchronized")
         return base_rsp, code_num
     object_parse = ObjectParse()
-    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse)
+    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token)
 
     return sync_res
