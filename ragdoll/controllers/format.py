@@ -401,7 +401,7 @@ class Format(object):
                             real_directory_conf[dir_path] = RealconfBaseInfo(file_path=dir_path,
                                                                              file_attr=file_atrr,
                                                                              file_owner=file_owner,
-                                                                             conf_contens="")
+                                                                             conf_contents="")
 
                         directory_conf = dict()
                         directory_conf["path"] = file_path
@@ -420,7 +420,7 @@ class Format(object):
                 content_string = object_parse.parse_directory_single_conf_to_json(dir_value,
                                                                                   real_directory_conf[
                                                                                       dir_path].file_path)
-                real_directory_conf[dir_path].conf_contens = content_string
+                real_directory_conf[dir_path].conf_contents = content_string
                 real_conf_base_info = real_directory_conf.get(dir_path)
 
                 read_conf_info.conf_base_infos.append(real_conf_base_info)
@@ -437,7 +437,7 @@ class Format(object):
                                                file_path=file_path,
                                                file_attr=file_atrr,
                                                file_owner=file_owner,
-                                               conf_contens=content_string)
+                                               conf_contents=content_string)
         read_conf_info.conf_base_infos.append(real_conf_base_info)
 
     @staticmethod
@@ -539,7 +539,7 @@ class Format(object):
                               manage_confs):
         comp_res = ""
         if d_conf_path in DIRECTORY_FILE_PATH_LIST:
-            confContents = json.loads(d_conf.conf_contens)
+            confContents = json.loads(d_conf.conf_contents)
             directory_conf_contents = ""
             for d_man_conf in manage_confs:
                 d_man_conf_path = d_man_conf.get("file_path")
@@ -566,7 +566,7 @@ class Format(object):
             for d_man_conf in manage_confs:
                 if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
                     continue
-                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contens)
+                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contents)
             conf_is_synced = ConfIsSynced(file_path=d_conf_path,
                                           is_synced=comp_res)
             host_sync_status.sync_status.append(conf_is_synced)
@@ -589,7 +589,7 @@ class Format(object):
                                      manage_confs):
         comp_res = ""
         if d_conf_path in DIRECTORY_FILE_PATH_LIST:
-            confContents = d_conf.get("conf_contens")
+            confContents = d_conf.get("conf_contents")
             directory_conf_contents = ""
             for d_man_conf in manage_confs:
                 d_man_conf_path = d_man_conf.get("file_path")
@@ -617,7 +617,7 @@ class Format(object):
                 if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
                     continue
                 contents = d_man_conf.get("contents")
-                comp_res = conf_model.conf_compare(contents, json.dumps(d_conf.get("conf_contens")))
+                comp_res = conf_model.conf_compare(contents, json.dumps(d_conf.get("conf_contents")))
             conf_is_synced = ConfIsSynced(file_path=d_conf_path,
                                           is_synced=comp_res)
             host_sync_status.sync_status.append(conf_is_synced)
@@ -680,10 +680,11 @@ class Format(object):
             host_sync_result.sync_result.append(conf_sync_res)
 
     @staticmethod
-    def deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token):
+    def deal_batch_sync_res(conf_tools, exist_host, file_path_infos, access_token):
+        from ragdoll.utils.object_parse import ObjectParse
         sync_conf_url = conf_tools.load_url_by_conf().get("batch_sync_url")
         headers = {"Content-Type": "application/json", "access_token": access_token}
-
+        object_parse = ObjectParse()
         # 组装参数
         sync_config_request = {"host_ids": exist_host, "file_path_infos": list()}
         for file_path, contents in file_path_infos.items():
@@ -822,3 +823,111 @@ class Format(object):
                     host_sync_status.sync_status.append(directory_conf_is_synced)
             sync_status.host_status.append(host_sync_status)
         return sync_status
+
+    @staticmethod
+    def deal_expected_confs_resp(expected_confs_resp_list):
+        """"
+            deal the excepted confs resp.
+
+        Args:
+            expected_confs_resp_list (list): e.g
+                [
+                    {
+                        "domainName": "xx"
+                        "confBaseInfos": [
+                            {
+                                "filePath": "xx",
+                                "expectedContents": "xxx"
+                            }
+                        ]
+                    }
+                ]
+        Returns:
+            dict: e.g
+            {
+                "aops": [
+                    {
+                        "file_path": "xxx",
+                        "contents": "xxx"
+                    }
+                ]
+            }
+        """
+        # 处理expected_confs_resp，将其处理成[{"file_path": "xxx", "contents": "xxx"}], 每个domain都有一个manage_confs
+        expected_confs_resp_dict = {}
+        for expected_confs_resp in expected_confs_resp_list:
+            manage_confs = []
+            domain_name = expected_confs_resp.domain_name
+            confBaseInfos = expected_confs_resp.conf_base_infos
+            for singleConfBaseInfo in confBaseInfos:
+                file_path = singleConfBaseInfo.file_path
+                contents = singleConfBaseInfo.expected_contents
+                single_manage_conf = {"file_path": file_path, "contents": contents}
+                manage_confs.append(single_manage_conf)
+            expected_confs_resp_dict[domain_name] = manage_confs
+        return expected_confs_resp_dict
+
+    @staticmethod
+    def deal_domain_result(domain_result):
+        """"
+            deal the domain result.
+
+        Args:
+            domain_result (object): e.g
+                {
+                    "aops": {
+                        "1": [
+                            {
+                                "filePath": "xxx",
+                                "contents": "xxxx"
+                            }
+                        ]
+                    }
+                }
+        Returns:
+            dict: e.g
+            {
+                "aops": [
+                    {
+                        "domain_name": "xxx",
+                        "host_id": 1,
+                        "conf_base_infos": [
+                            {
+                                "file_path": "xxx",
+                                "conf_contents": {} or []
+                            }
+                        ]
+                    }
+                ]
+            }
+        """
+        # 处理domain_result,将其处理成[{"domain_name": "aops","host_id": 7, "conf_base_infos": [{"conf_contents": "xxx", "file_path": "xxx"}]}]
+        from ragdoll.utils.object_parse import ObjectParse
+        real_conf_res_text_dict = {}
+        parse = ObjectParse()
+        for domain, host_infos in domain_result.items():
+            real_conf_res_text_list = []
+            for host_id, confs in host_infos.items():
+                signal_host_infos = {"domain_name": domain, "host_id": int(host_id), "conf_base_infos": []}
+                for conf in confs:
+                    conf_path = conf["filePath"]
+                    conf_info = conf["contents"]
+                    conf_type = parse.get_conf_type_by_conf_path(conf_path)
+                    if not conf_type:
+                        return
+                    # create conf model
+                    conf_model = parse.create_conf_model_by_type(conf_type)
+                    # 转换解析
+                    if conf_path not in DIRECTORY_FILE_PATH_LIST:
+                        Format.convert_real_conf(conf_model, conf_type, conf_info, conf_path, parse)
+                    else:
+                        pam_res_infos = []
+                        for path, content in json.loads(conf_info).items():
+                            signal_res_info = {"path": path, "content": content}
+                            pam_res_infos.append(signal_res_info)
+                        Format.convert_real_conf(conf_model, conf_type, pam_res_infos, conf_path, parse)
+                    signal_conf = {"file_path": conf["filePath"], "conf_contents": conf_model.conf}
+                    signal_host_infos["conf_base_infos"].append(signal_conf)
+                real_conf_res_text_list.append(signal_host_infos)
+            real_conf_res_text_dict[domain] = real_conf_res_text_list
+        return real_conf_res_text_dict

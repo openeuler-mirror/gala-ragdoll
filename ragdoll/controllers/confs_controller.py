@@ -289,8 +289,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
                 contents = d_man_conf.get("contents")
                 file_path_infos[file_path] = contents
 
-    object_parse = ObjectParse()
-    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token)
+    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, access_token)
 
     return sync_res
 
@@ -346,47 +345,9 @@ def compare_conf_diff(body=None):
         body = CompareConfDiff.from_dict(connexion.request.get_json())  # noqa: E501
     expected_confs_resp_list = body.expected_confs_resp
     domain_result = body.domain_result
-    # 处理expected_confs_resp，将其处理成[{"file_path": "xxx", "contents": "xxx"}], 每个domain都有一个manage_confs
-    expected_confs_resp_dict = {}
-    for expected_confs_resp in expected_confs_resp_list:
-        manage_confs = []
-        domain_name = expected_confs_resp.domain_name
-        confBaseInfos = expected_confs_resp.conf_base_infos
-        for singleConfBaseInfo in confBaseInfos:
-            file_path = singleConfBaseInfo.file_path
-            contents = singleConfBaseInfo.expected_contents
-            single_manage_conf = {"file_path": file_path, "contents": contents}
-            manage_confs.append(single_manage_conf)
-        expected_confs_resp_dict[domain_name] = manage_confs
+    expected_confs_resp_dict = Format.deal_expected_confs_resp(expected_confs_resp_list)
 
-    # 处理domain_result,将其处理成[{"domain_name": "aops","host_id": 7, "conf_base_infos": [{"conf_contens": "xxx", "file_path": "xxx"}]}]
-    real_conf_res_text_dict = {}
-    parse = ObjectParse()
-    for domain, host_infos in domain_result.items():
-        real_conf_res_text_list = []
-        for host_id, confs in host_infos.items():
-            signal_host_infos = {"domain_name": domain, "host_id": int(host_id), "conf_base_infos": []}
-            for conf in confs:
-                conf_path = conf["filePath"]
-                conf_info = conf["contents"]
-                conf_type = parse.get_conf_type_by_conf_path(conf_path)
-                if not conf_type:
-                    return
-                # create conf model
-                conf_model = parse.create_conf_model_by_type(conf_type)
-                # 转换解析
-                if conf_path not in DIRECTORY_FILE_PATH_LIST:
-                    Format.convert_real_conf(conf_model, conf_type, conf_info, conf_path, parse)
-                else:
-                    pam_res_infos = []
-                    for path, content in json.loads(conf_info).items():
-                        signal_res_info = {"path": path, "content": content}
-                        pam_res_infos.append(signal_res_info)
-                    Format.convert_real_conf(conf_model, conf_type, pam_res_infos, conf_path, parse)
-                signal_conf = {"file_path": conf["filePath"], "conf_contens": conf_model.conf}
-                signal_host_infos["conf_base_infos"].append(signal_conf)
-            real_conf_res_text_list.append(signal_host_infos)
-        real_conf_res_text_dict[domain] = real_conf_res_text_list
+    real_conf_res_text_dict = Format.deal_domain_result(domain_result)
 
     # 循环real_conf_res_text_list 取出每一个domain的domain_result与expected_confs_resp_dict的expected_confs_resp做对比
     sync_result = []
@@ -517,7 +478,7 @@ def batch_sync_conf_to_host_from_domain(body=None):  # noqa: E501
         code_num = 400
         base_rsp = BaseResponse(400, "No config needs to be synchronized")
         return base_rsp, code_num
-    object_parse = ObjectParse()
-    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, object_parse, access_token)
+
+    sync_res = Format.deal_batch_sync_res(conf_tools, exist_host, file_path_infos, access_token)
 
     return sync_res
