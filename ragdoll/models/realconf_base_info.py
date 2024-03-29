@@ -15,7 +15,7 @@ class RealconfBaseInfo(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, path: str=None, file_path: str=None, rpm_name: str=None, rpm_version: str=None, rpm_release: str=None, file_attr: str=None, file_owner: str=None, conf_type: str=None, spacer: str=None, conf_contens: str=None):  # noqa: E501
+    def __init__(self, path: str=None, file_path: str=None, rpm_name: str=None, rpm_version: str=None, rpm_release: str=None, file_attr: str=None, file_owner: str=None, conf_type: str=None, spacer: str=None, conf_contents: str=None):  # noqa: E501
         """RealconfBaseInfo - a model defined in Swagger
 
         :param path: The path of this RealconfBaseInfo.  # noqa: E501
@@ -36,8 +36,8 @@ class RealconfBaseInfo(Model):
         :type conf_type: str
         :param spacer: The spacer of this RealconfBaseInfo.  # noqa: E501
         :type spacer: str
-        :param conf_contens: The conf_contens of this RealconfBaseInfo.  # noqa: E501
-        :type conf_contens: str
+        :param conf_contents: The conf_contents of this RealconfBaseInfo.  # noqa: E501
+        :type conf_contents: str
         """
         self.swagger_types = {
             'path': str,
@@ -49,7 +49,7 @@ class RealconfBaseInfo(Model):
             'file_owner': str,
             'conf_type': str,
             'spacer': str,
-            'conf_contens': str
+            'conf_contents': str
         }
 
         self.attribute_map = {
@@ -62,7 +62,7 @@ class RealconfBaseInfo(Model):
             'file_owner': 'fileOwner',
             'conf_type': 'confType',
             'spacer': 'spacer',
-            'conf_contens': 'confContents'
+            'conf_contents': 'confContents'
         }
 
         self._path = path
@@ -74,7 +74,7 @@ class RealconfBaseInfo(Model):
         self._file_owner = file_owner
         self._conf_type = conf_type
         self._spacer = spacer
-        self._conf_contens = conf_contens
+        self._conf_contents = conf_contents
 
     @classmethod
     def from_dict(cls, dikt) -> 'RealconfBaseInfo':
@@ -293,24 +293,24 @@ class RealconfBaseInfo(Model):
         self._spacer = spacer
 
     @property
-    def conf_contens(self) -> str:
-        """Gets the conf_contens of this RealconfBaseInfo.
+    def conf_contents(self) -> str:
+        """Gets the conf_contents of this RealconfBaseInfo.
 
         the specific content of the configuration item  # noqa: E501
 
-        :return: The conf_contens of this RealconfBaseInfo.
+        :return: The conf_contents of this RealconfBaseInfo.
         :rtype: str
         """
-        return self._conf_contens
+        return self._conf_contents
 
-    @conf_contens.setter
-    def conf_contens(self, conf_contens: str):
-        """Sets the conf_contens of this RealconfBaseInfo.
+    @conf_contents.setter
+    def conf_contents(self, conf_contents: str):
+        """Sets the conf_contents of this RealconfBaseInfo.
 
         the specific content of the configuration item  # noqa: E501
 
-        :param conf_contens: The conf_contens of this RealconfBaseInfo.
-        :type conf_contens: str
+        :param conf_contents: The conf_contents of this RealconfBaseInfo.
+        :type conf_contents: str
         """
 
-        self._conf_contens = conf_contens
+        self._conf_contents = conf_contents

@@ -34,6 +34,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
     :rtype: BaseResponse
     """
+    access_token = connexion.request.headers.get("access_token")
     if connexion.request.is_json:
         body = Confs.from_dict(connexion.request.get_json())  # noqa: E501
 
@@ -115,7 +116,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 if d_conf.file_path not in DIRECTORY_FILE_PATH_LIST:
                     exist_host[host_id].append(d_conf.file_path)
                 else:
-                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id)
+                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id, access_token)
                     if len(file_paths) == 0:
                         base_rsp = BaseResponse(codeNum, codeString)
                         return base_rsp, codeNum
@@ -128,7 +129,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                     conf_list.append(d_conf.file_path)
                     exist_host[host_id] = conf_list
                 else:
-                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id)
+                    codeNum, codeString, file_paths = object_parse.get_directory_files(d_conf, host_id, access_token)
                     if len(file_paths) == 0:
                         base_rsp = BaseResponse(codeNum, codeString)
                         return base_rsp, codeNum
@@ -144,7 +145,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         get_real_conf_body["infos"] = get_real_conf_body_info
 
         url = conf_tools.load_url_by_conf().get("collect_url")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "access_token": access_token}
         try:
             response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
         except requests.exceptions.RequestException as connect_ex:

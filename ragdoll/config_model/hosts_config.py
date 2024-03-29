@@ -83,7 +83,7 @@ class HostsConfig(BaseHandlerConfig):
             self.conf = dict_res
 
     @staticmethod
-    def conf_compare(dst_conf, src_conf):
+    def conf_compare(src_conf, dst_conf):
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)

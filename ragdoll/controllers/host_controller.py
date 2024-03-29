@@ -6,13 +6,15 @@ import ast
 from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
+from ragdoll.models.domain_names import DomainNames
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.models.host_infos import HostInfos  # noqa: E501
-from ragdoll import util
 from ragdoll.controllers.format import Format
+from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.git_tools import GitTools
 
 TARGETDIR = GitTools().target_dir
+
 
 def add_host_in_domain(body=None):  # noqa: E501
     """add host in the configuration domain
@@ -52,6 +54,9 @@ def add_host_in_domain(body=None):  # noqa: E501
     successHost = []
     failedHost = []
     domainPath = os.path.join(TARGETDIR, domain)
+    # 将domainName 和host信息入库
+    conf_tools = ConfTools()
+    Format.addHostSyncStatus(conf_tools, domain, host_infos)
 
     # Check whether the current host exists in the domain.
     for host in host_infos:
@@ -84,7 +89,7 @@ def add_host_in_domain(body=None):  # noqa: E501
     if len(host_infos) > 0:
         git_tools = GitTools()
         commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +
-                                "the host including : {}".format(successHost))
+                                          "the host including : {}".format(successHost))
 
     base_rsp = BaseResponse(codeNum, codeString)
 
@@ -121,13 +126,17 @@ def delete_host_in_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
 
+    # 将host sync status从库中删除
+    conf_tools = ConfTools()
+    Format.deleteHostSyncStatus(conf_tools, domain, hostInfos)
+
     # Whether the host information added within the current domain is empty while ain exists
     domainPath = os.path.join(TARGETDIR, domain)
     hostPath = os.path.join(domainPath, "hostRecord.txt")
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +
-                                          "Please add the host information first")
+                                "Please add the host information first")
         return base_rsp, codeNum
 
     # If the input host information is empty, the host information of the whole domain is cleared
@@ -136,7 +145,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
             try:
                 os.remove(hostPath)
             except OSError as ex:
-                LOGGER.error("Failed to delete hostpath as OS error: {0}".format(err))
+                LOGGER.error("Failed to delete hostpath as OS error: {0}".format(ex))
                 codeNum = 500
                 base_rsp = BaseResponse(codeNum, "The host delete failed.")
                 return base_rsp, codeNum
@@ -178,7 +187,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
     if len(notContainedInHost) == len(hostInfos):
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "All the host does not belong to the domain control, " +
-                                         "please enter the host again")
+                                "please enter the host again")
         return base_rsp, codeNum
 
     # Some hosts belong to domains, and some hosts do not belong to domains.
@@ -193,7 +202,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
     if len(containedInHost) > 0:
         git_tools = GitTools()
         commit_code = git_tools.gitCommit("Delete the host in {} domian, ".format(domain) +
-                                "the host including : {}".format(containedInHost))
+                                          "the host including : {}".format(containedInHost))
 
     base_rsp = BaseResponse(codeNum, codeString)
 
@@ -235,7 +244,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +
-                                          "Please add the host information first.")
+                                "Please add the host information first.")
         return base_rsp, codeNum
 
     # The domain exists, and the host information exists and is not empty
@@ -268,3 +277,76 @@ def get_host_by_domain_name(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, "Get host info in the domain succeccfully")
 
     return hostlist
+
+
+def get_hosts_by_domain_names(body=None):  # noqa: E501
+    """get hosts by domainNames
+
+    get the hosts information of the configuration domains # noqa: E501
+
+    :param body: domains info
+    :type body: List[DomainName]
+    :rtype: List[Host]
+    """
+    if connexion.request.is_json:
+        body = DomainNames.from_dict(connexion.request.get_json())  # noqa: E501
+
+    domains = body.domain_names
+    domain_hosts = []
+    for domain in domains:
+        # check the input domain
+        domain_name = domain.domain_name
+        checkRes = Format.domainCheck(domain_name)
+        if not checkRes:
+            num = 400
+            base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+            return base_rsp, num
+
+        #  check whether the domain exists
+        isExist = Format.isDomainExist(domain_name)
+        if not isExist:
+            codeNum = 400
+            base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
+            return base_rsp, codeNum
+
+        # The domain exists, but the host information is empty
+        domainPath = os.path.join(TARGETDIR, domain_name)
+        hostPath = os.path.join(domainPath, "hostRecord.txt")
+        if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
+            codeNum = 400
+            base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +
+                                    "Please add the host information first.")
+            return base_rsp, codeNum
+
+        # The domain exists, and the host information exists and is not empty
+        hostlist = []
+        LOGGER.debug("hostPath is : {}".format(hostPath))
+        try:
+            with open(hostPath, 'r') as d_file:
+                for line in d_file.readlines():
+                    json_str = json.loads(line)
+                    host_json = ast.literal_eval(json_str)
+                    hostId = host_json["host_id"]
+                    hostlist.append(hostId)
+        except OSError as err:
+            LOGGER.error("OS error: {0}".format(err))
+            codeNum = 500
+            base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
+            return base_rsp, codeNum
+
+        # Joining together the returned codenum codeMessag
+        if len(hostlist) == 0:
+            codeNum = 500
+            base_rsp = BaseResponse(codeNum, "Some unknown problems.")
+            return base_rsp, codeNum
+        else:
+            LOGGER.debug("hostlist is : {}".format(hostlist))
+            codeNum = 200
+            base_rsp = BaseResponse(codeNum, "Get host info in the domain succeccfully")
+        domain_host = {
+            'domainName': domain_name,
+            'hostIds': hostlist
+        }
+        domain_hosts.append(domain_host)
+
+    return domain_hosts

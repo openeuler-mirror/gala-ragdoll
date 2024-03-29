@@ -605,7 +605,26 @@ class ConfTools(object):
         object_file_url = "{address}:{port}{api}".format(address=object_file_address, api=object_file_api,
                                                          port=object_file_port)
 
-        url = {"collect_url": collect_url, "sync_url": sync_url, "object_file_url": object_file_url}
+        batch_sync_address = ast.literal_eval(cf.get("sync", "batch_sync_address"))
+        batch_sync_api = ast.literal_eval(cf.get("sync", "batch_sync_api"))
+        batch_sync_port = str(cf.get("sync", "sync_port"))
+        batch_sync_url = "{address}:{port}{api}".format(address=batch_sync_address, api=batch_sync_api,
+                                                        port=batch_sync_port)
+
+        host_sync_status_address = ast.literal_eval(cf.get("sync_status", "host_sync_status_address"))
+        add_host_sync_status_api = ast.literal_eval(cf.get("sync_status", "add_host_sync_status_api"))
+        delete_host_sync_status_api = ast.literal_eval(cf.get("sync_status", "delete_host_sync_status_api"))
+        host_sync_status_port = str(cf.get("sync_status", "host_sync_status_port"))
+        add_host_sync_status_url = "{address}:{port}{api}".format(address=host_sync_status_address,
+                                                                  api=add_host_sync_status_api,
+                                                                  port=host_sync_status_port)
+        delete_host_sync_status_url = "{address}:{port}{api}".format(address=host_sync_status_address,
+                                                                     api=delete_host_sync_status_api,
+                                                                     port=host_sync_status_port)
+
+        url = {"collect_url": collect_url, "sync_url": sync_url, "object_file_url": object_file_url,
+               "batch_sync_url": batch_sync_url, "add_host_sync_status_url": add_host_sync_status_url,
+               "delete_host_sync_status_url": delete_host_sync_status_url}
         return url
 
     def load_port_by_conf(self):
