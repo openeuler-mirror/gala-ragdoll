@@ -13,7 +13,7 @@ from ragdoll.log.log import LOGGER
 from ragdoll.test import BaseTestCase
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.object_parse import ObjectParse
-from ragdoll.controllers.format import Format
+from ragdoll.utils.format import Format
 
 class TestConfModel():
     """ Test config_model """

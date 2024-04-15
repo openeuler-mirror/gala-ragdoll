@@ -178,7 +178,7 @@ class ObjectParse(object):
         file_paths = list()
         conf_tools = ConfTools()
         file_directory = dict()
-        file_directory['file_directory'] = d_conf.file_path
+        file_directory['file_directory'] = d_conf["filePath"]
         file_directory['host_id'] = host_id
         url = conf_tools.load_url_by_conf().get("object_file_url")
         headers = {"Content-Type": "application/json", "access_token": access_token}
@@ -192,7 +192,7 @@ class ObjectParse(object):
             return base_rsp, codeNum
         LOGGER.info(f"Get directory files response: {response.text}")
         response_code = json.loads(response.text).get("code")
-        if response_code == None:
+        if response_code is None:
             codeNum = 500
             codeString = "Failed to obtain the actual configuration, please check the interface of conf/objectFile."
             return codeNum, codeString, file_paths

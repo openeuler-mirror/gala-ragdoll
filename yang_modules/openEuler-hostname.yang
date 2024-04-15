@@ -61,7 +61,7 @@ module openEuler-hostname {
       description "The file name is hostname";
 
       hostname:path "openEuler:/etc/hostname";
-      hostname:type "text";
+      hostname:type "hostname";
       hostname:spacer "";
     }
   }

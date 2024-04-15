@@ -45,6 +45,7 @@ mkdir %{buildroot}/%{python3_sitelib}/ragdoll/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
+install service/ragdoll %{buildroot}/%{_prefix}/bin/
 
 
 %pre 
@@ -68,6 +69,7 @@ fi
 /%{_sysconfdir}/ragdoll/gala-ragdoll.conf
 %{_bindir}/ragdoll
 %{_prefix}/lib/systemd/system/gala-ragdoll.service
+%{_prefix}/bin/ragdoll
 
 
 %files -n python3-gala-ragdoll

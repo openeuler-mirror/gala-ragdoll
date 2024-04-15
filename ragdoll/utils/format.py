@@ -14,12 +14,6 @@ from ragdoll.models import ConfSyncedRes
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf_file import ConfFile
 from ragdoll.models.conf_files import ConfFiles
-from ragdoll.models.realconf_base_info import RealconfBaseInfo
-from ragdoll.models.real_conf_info import RealConfInfo  # noqa: E501
-from ragdoll.models.conf_is_synced import ConfIsSynced
-from ragdoll.models.host_sync_status import HostSyncStatus
-from ragdoll.models.single_config import SingleConfig
-from ragdoll.models.sync_status import SyncStatus  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.utils.host_tools import HostTools
 
@@ -104,6 +98,7 @@ class Format(object):
 
     @staticmethod
     def addHostToFile(d_file, host):
+        host = {'host_id': host["hostId"], 'ip': host["ip"], 'ipv6': host["ipv6"]}
         info_json = json.dumps(str(host), sort_keys=False, indent=4, separators=(',', ': '))
         os.umask(0o077)
         with open(d_file, 'a+') as host_file:
@@ -317,10 +312,8 @@ class Format(object):
 
     @staticmethod
     def get_realconf_by_domain_and_host(domain, exist_host, access_token):
-        LOGGER.debug("Get realconf by domain : {} and host : {}.".format(domain, exist_host))
         res = []
         conf_files = Format.get_manageconf_by_domain(domain)
-
         # get the real conf in host
         conf_list = []
         from ragdoll.utils.conf_tools import ConfTools
@@ -379,9 +372,7 @@ class Format(object):
                 success_lists["success_conf"] = []
                 success_lists["failed_conf"] = []
 
-            read_conf_info = RealConfInfo(domain_name=domain,
-                                          host_id=d_host_id,
-                                          conf_base_infos=[])
+            read_conf_info = {"domainName": domain, "hostID": d_host_id, "confBaseInfos": []}
             d_res_infos = d_res.get("infos")
 
             real_directory_conf = {}
@@ -398,11 +389,8 @@ class Format(object):
                     if str(file_path).find(dir_path) != -1:
                         if real_directory_conf.get(dir_path) is None:
                             real_directory_conf_list[dir_path] = list()
-                            real_directory_conf[dir_path] = RealconfBaseInfo(file_path=dir_path,
-                                                                             file_attr=file_atrr,
-                                                                             file_owner=file_owner,
-                                                                             conf_contents="")
-
+                            real_directory_conf[dir_path] = {"filePath": dir_path, "fileAttr": file_atrr,
+                                                             "fileOwner": file_owner, "confContents": ""}
                         directory_conf = dict()
                         directory_conf["path"] = file_path
                         directory_conf["content"] = content
@@ -419,11 +407,11 @@ class Format(object):
             for dir_path, dir_value in real_directory_conf_list.items():
                 content_string = object_parse.parse_directory_single_conf_to_json(dir_value,
                                                                                   real_directory_conf[
-                                                                                      dir_path].file_path)
-                real_directory_conf[dir_path].conf_contents = content_string
+                                                                                      dir_path]["filePath"])
+                real_directory_conf[dir_path]["confContents"] = content_string
                 real_conf_base_info = real_directory_conf.get(dir_path)
 
-                read_conf_info.conf_base_infos.append(real_conf_base_info)
+                read_conf_info.get("confBaseInfos").append(real_conf_base_info)
             res.append(read_conf_info)
         return res
 
@@ -433,12 +421,9 @@ class Format(object):
         file_atrr = d_file.get("file_attr").get("mode")
         file_owner = "({}, {})".format(d_file.get("file_attr").get("group"),
                                        d_file.get("file_attr").get("owner"))
-        real_conf_base_info = RealconfBaseInfo(path=file_path,
-                                               file_path=file_path,
-                                               file_attr=file_atrr,
-                                               file_owner=file_owner,
-                                               conf_contents=content_string)
-        read_conf_info.conf_base_infos.append(real_conf_base_info)
+        real_conf_base_info = {"path": file_path, "filePath": file_path, "fileAttr": file_atrr, "fileOwner": file_owner,
+                               "confContents": content_string}
+        read_conf_info.get("confBaseInfos").append(real_conf_base_info)
 
     @staticmethod
     def check_domain_param(domain):
@@ -461,7 +446,7 @@ class Format(object):
         is_host_list_exist = Format.isHostInDomain(domain)
         if not is_host_list_exist:
             code_num = 404
-            base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+            base_resp = BaseResponse(code_num, "The host information is not set in the current domain." +
                                     "Please add the host information first")
         return base_resp, code_num
 
@@ -502,18 +487,17 @@ class Format(object):
 
     @staticmethod
     def diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs):
-        sync_status = SyncStatus(domain_name=domain,
-                                 host_status=[])
+        sync_status = {"domainName": domain, "hostStatus": []}
+
         from ragdoll.utils.object_parse import ObjectParse
 
         for d_real_conf in real_conf_res_text:
-            host_id = d_real_conf.host_id
-            host_sync_status = HostSyncStatus(host_id=host_id,
-                                              sync_status=[])
-            d_real_conf_base = d_real_conf.conf_base_infos
+            host_id = d_real_conf["hostID"]
+            host_sync_status = {"hostId": host_id, "syncStatus": []}
+            d_real_conf_base = d_real_conf["confBaseInfos"]
             for d_conf in d_real_conf_base:
-                directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
-                d_conf_path = d_conf.file_path
+                directory_conf_is_synced = {"file_path": "", "isSynced": "", "singleConf": []}
+                d_conf_path = d_conf["filePath"]
 
                 object_parse = ObjectParse()
                 # get the conf type and model
@@ -522,16 +506,16 @@ class Format(object):
                 Format.deal_conf_sync_status(conf_model, d_conf, d_conf_path, directory_conf_is_synced,
                                              host_sync_status, manage_confs)
 
-                if len(directory_conf_is_synced.single_conf) > 0:
+                if len(directory_conf_is_synced.get("singleConf")) > 0:
                     synced_flag = SYNCHRONIZED
-                    for single_config in directory_conf_is_synced.single_conf:
-                        if single_config.single_is_synced == SYNCHRONIZED:
+                    for single_config in directory_conf_is_synced.get("singleConf"):
+                        if single_config.get("singleIsSynced") == SYNCHRONIZED:
                             continue
                         else:
                             synced_flag = NOT_SYNCHRONIZE
-                    directory_conf_is_synced.is_synced = synced_flag
-                    host_sync_status.sync_status.append(directory_conf_is_synced)
-            sync_status.host_status.append(host_sync_status)
+                    directory_conf_is_synced["isSynced"] = synced_flag
+                    host_sync_status.get("syncStatus").append(directory_conf_is_synced)
+            sync_status.get("hostStatus").append(host_sync_status)
         return sync_status
 
     @staticmethod
@@ -539,37 +523,34 @@ class Format(object):
                               manage_confs):
         comp_res = ""
         if d_conf_path in DIRECTORY_FILE_PATH_LIST:
-            confContents = json.loads(d_conf.conf_contents)
+            confContents = json.loads(d_conf["confContents"])
             directory_conf_contents = ""
             for d_man_conf in manage_confs:
                 d_man_conf_path = d_man_conf.get("file_path")
                 if d_man_conf_path != d_conf_path:
-                    # if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
                     continue
                 else:
-                    directory_conf_is_synced.file_path = d_conf_path
+                    directory_conf_is_synced["file_path"] = d_conf_path
                     directory_conf_contents = d_man_conf.get("contents")
 
             directory_conf_contents_dict = json.loads(directory_conf_contents)
 
             for dir_conf_content_key, dir_conf_content_value in directory_conf_contents_dict.items():
                 if dir_conf_content_key not in confContents.keys():
-                    single_conf = SingleConfig(single_file_path=dir_conf_content_key,
-                                               single_is_synced=NOT_SYNCHRONIZE)
-                    directory_conf_is_synced.single_conf.append(single_conf)
+                    single_conf = {"singleFilePath": dir_conf_content_key, "singleIsSynced": NOT_SYNCHRONIZE}
+                    directory_conf_is_synced.get("singleConf").append(single_conf)
                 else:
                     dst_conf = confContents.get(dir_conf_content_key)
                     comp_res = conf_model.conf_compare(dir_conf_content_value, dst_conf)
-                    single_conf = SingleConfig(single_file_path=dir_conf_content_key, single_is_synced=comp_res)
-                    directory_conf_is_synced.single_conf.append(single_conf)
+                    single_conf = {"singleFilePath": dir_conf_content_key, "singleIsSynced": comp_res}
+                    directory_conf_is_synced.get("singleConf").append(single_conf)
         else:
             for d_man_conf in manage_confs:
                 if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
                     continue
-                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.conf_contents)
-            conf_is_synced = ConfIsSynced(file_path=d_conf_path,
-                                          is_synced=comp_res)
-            host_sync_status.sync_status.append(conf_is_synced)
+                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf["confContents"])
+            conf_is_synced = {"file_path": d_conf_path, "isSynced": comp_res}
+            host_sync_status.get("syncStatus").append(conf_is_synced)
 
     @staticmethod
     def convert_real_conf(conf_model, conf_type, conf_info, conf_path, parse):
@@ -594,33 +575,30 @@ class Format(object):
             for d_man_conf in manage_confs:
                 d_man_conf_path = d_man_conf.get("file_path")
                 if d_man_conf_path != d_conf_path:
-                    # if d_man_conf_path not in DIRECTORY_FILE_PATH_LIST:
                     continue
                 else:
-                    directory_conf_is_synced.file_path = d_conf_path
+                    directory_conf_is_synced["file_path"] = d_conf_path
                     directory_conf_contents = d_man_conf.get("contents")
 
             directory_conf_contents_dict = json.loads(directory_conf_contents)
 
             for dir_conf_content_key, dir_conf_content_value in directory_conf_contents_dict.items():
                 if dir_conf_content_key not in confContents.keys():
-                    single_conf = SingleConfig(single_file_path=dir_conf_content_key,
-                                               single_is_synced=NOT_SYNCHRONIZE)
-                    directory_conf_is_synced.single_conf.append(single_conf)
+                    single_conf = {"singleFilePath": dir_conf_content_key, "singleIsSynced": NOT_SYNCHRONIZE}
+                    directory_conf_is_synced["singleConf"].append(single_conf)
                 else:
                     dst_conf = confContents.get(dir_conf_content_key)
                     comp_res = conf_model.conf_compare(dir_conf_content_value, dst_conf)
-                    single_conf = SingleConfig(single_file_path=dir_conf_content_key, single_is_synced=comp_res)
-                    directory_conf_is_synced.single_conf.append(single_conf)
+                    single_conf = {"singleFilePath": dir_conf_content_key, "singleIsSynced": comp_res}
+                    directory_conf_is_synced["singleConf"].append(single_conf)
         else:
             for d_man_conf in manage_confs:
                 if d_man_conf.get("file_path").split(":")[-1] != d_conf_path:
                     continue
                 contents = d_man_conf.get("contents")
                 comp_res = conf_model.conf_compare(contents, json.dumps(d_conf.get("conf_contents")))
-            conf_is_synced = ConfIsSynced(file_path=d_conf_path,
-                                          is_synced=comp_res)
-            host_sync_status.sync_status.append(conf_is_synced)
+            conf_is_synced = {"file_path": d_conf_path, "isSynced": comp_res}
+            host_sync_status["syncStatus"].append(conf_is_synced)
 
     @staticmethod
     def get_conf_type_model(d_conf_path, object_parse):
@@ -685,6 +663,8 @@ class Format(object):
         sync_conf_url = conf_tools.load_url_by_conf().get("batch_sync_url")
         headers = {"Content-Type": "application/json", "access_token": access_token}
         object_parse = ObjectParse()
+        codeNum = 200
+        codeString = "sync config succeed "
         # 组装参数
         sync_config_request = {"host_ids": exist_host, "file_path_infos": list()}
         for file_path, contents in file_path_infos.items():
@@ -704,8 +684,7 @@ class Format(object):
             LOGGER.error(f"An error occurred: {connect_ex}")
             codeNum = 500
             codeString = "Failed to sync configuration, please check the interface of config/sync."
-            base_rsp = BaseResponse(codeNum, codeString)
-            return base_rsp, codeNum
+            return codeNum, codeString, []
         # 处理响应
         resp_code = json.loads(sync_response.text).get('code')
         resp = json.loads(sync_response.text).get('data')
@@ -713,8 +692,7 @@ class Format(object):
             codeNum = 500
             codeString = f"Failed to sync configuration, reason is {json.loads(sync_response.text).get('message')}, " \
                          f"please check the interface of config/sync. "
-            base_rsp = BaseResponse(codeNum, codeString)
-            return base_rsp, codeNum
+            return codeNum, codeString, []
 
         # 重新构建返回值，目录文件返回值重新构造
         sync_res = []
@@ -739,7 +717,7 @@ class Format(object):
                 syncResult.append(directory_sync_result)
             single_host_sync_result = {"host_id": host_result.get("host_id"), "syncResult": syncResult}
             sync_res.append(single_host_sync_result)
-        return sync_res
+        return codeNum, codeString, sync_res
 
     @staticmethod
     def addHostSyncStatus(conf_tools, domain, host_infos):
@@ -749,15 +727,14 @@ class Format(object):
         try:
             for host in host_infos:
                 host_sync_status = {
-                    "host_id": host.host_id,
-                    "host_ip": host.ip,
+                    "host_id": host.get("hostId"),
+                    "host_ip": host.get("ip"),
                     "domain_name": domain,
                     "sync_status": 0
                 }
                 add_host_sync_status_response = requests.post(add_host_sync_status_url,
                                                               data=json.dumps(host_sync_status), headers=headers)
                 resp_code = json.loads(add_host_sync_status_response.text).get('code')
-                LOGGER.info("resp_code is {}".format(resp_code))
                 if resp_code != "200":
                     LOGGER.error(
                         "Failed to add host sync status, please check the interface of /manage/host/sync/status/add.")
@@ -773,7 +750,7 @@ class Format(object):
         try:
             for host in hostInfos:
                 delete_host_sync_status = {
-                    "host_id": host.host_id,
+                    "host_id": host.get("hostId"),
                     "domain_name": domain
                 }
                 delete_host_sync_status_response = requests.post(delete_host_sync_status_url,
@@ -792,36 +769,32 @@ class Format(object):
 
     @staticmethod
     def diff_mangeconf_with_realconf_for_db(domain, real_conf_res_text, manage_confs):
-        sync_status = SyncStatus(domain_name=domain,
-                                 host_status=[])
+        sync_status = {"domainName": domain, "hostStatus": []}
         from ragdoll.utils.object_parse import ObjectParse
 
         for d_real_conf in real_conf_res_text:
             host_id = d_real_conf.get('host_id')
-            host_sync_status = HostSyncStatus(host_id=host_id,
-                                              sync_status=[])
+            host_sync_status = {"hostId": host_id, "syncStatus": []}
             d_real_conf_base = d_real_conf.get('conf_base_infos')
             for d_conf in d_real_conf_base:
-                directory_conf_is_synced = ConfIsSynced(file_path="", is_synced="", single_conf=[])
+                directory_conf_is_synced = {"file_path": "", "isSynced": "", "singleConf": []}
                 d_conf_path = d_conf.get('file_path')
-
                 object_parse = ObjectParse()
                 # get the conf type and model
                 conf_type, conf_model = Format.get_conf_type_model(d_conf_path, object_parse)
-
                 Format.deal_conf_sync_status_for_db(conf_model, d_conf, d_conf_path, directory_conf_is_synced,
                                                     host_sync_status, manage_confs)
 
-                if len(directory_conf_is_synced.single_conf) > 0:
+                if len(directory_conf_is_synced["singleConf"]) > 0:
                     synced_flag = SYNCHRONIZED
-                    for single_config in directory_conf_is_synced.single_conf:
-                        if single_config.single_is_synced == SYNCHRONIZED:
+                    for single_config in directory_conf_is_synced["singleConf"]:
+                        if single_config["singleIsSynced"] == SYNCHRONIZED:
                             continue
                         else:
                             synced_flag = NOT_SYNCHRONIZE
-                    directory_conf_is_synced.is_synced = synced_flag
-                    host_sync_status.sync_status.append(directory_conf_is_synced)
-            sync_status.host_status.append(host_sync_status)
+                    directory_conf_is_synced["isSynced"] = synced_flag
+                    host_sync_status["syncStatus"].append(directory_conf_is_synced)
+            sync_status.get("hostStatus").append(host_sync_status)
         return sync_status
 
     @staticmethod
@@ -857,11 +830,11 @@ class Format(object):
         expected_confs_resp_dict = {}
         for expected_confs_resp in expected_confs_resp_list:
             manage_confs = []
-            domain_name = expected_confs_resp.domain_name
-            confBaseInfos = expected_confs_resp.conf_base_infos
+            domain_name = expected_confs_resp["domainName"]
+            confBaseInfos = expected_confs_resp["confBaseInfos"]
             for singleConfBaseInfo in confBaseInfos:
-                file_path = singleConfBaseInfo.file_path
-                contents = singleConfBaseInfo.expected_contents
+                file_path = singleConfBaseInfo["filePath"]
+                contents = singleConfBaseInfo["expectedContents"]
                 single_manage_conf = {"file_path": file_path, "contents": contents}
                 manage_confs.append(single_manage_conf)
             expected_confs_resp_dict[domain_name] = manage_confs
