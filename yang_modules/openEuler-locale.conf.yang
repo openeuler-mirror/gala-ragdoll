@@ -1,0 +1,68 @@
+/******************************************************
+* Copyright (C) 2024 chinamobile Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-locale.conf {
+  namespace "urn:huawei:yang:openEuler-locale.conf";
+  prefix "locale";
+
+  organization
+    "chinamobile";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     locale config.
+     The real path is : /etc/locale.conf";
+
+  revision 2024-04-16 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path{
+    argument "filePath";
+    description "The real path corresponding to the sshd file.";
+  }
+
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container locale {
+
+    description "the conf file in locale modules.";
+
+    container locale.conf {
+
+      description "The file name is locale.conf";
+
+      resolv:path "openEuler:/etc/locale.conf";
+      resolv:type "locale";
+      resolv:spacer "";
+    }
+  }
+}
