@@ -19,7 +19,7 @@ setup(
     version=VERSION,
     description="Configuration traceability",
     author_email="",
-    url="",
+    url="https://gitee.com/openeuler/gala-ragdoll",
     keywords=["Swagger", "Configuration traceability"],
     install_requires=REQUIRES,
     packages=find_packages(),
