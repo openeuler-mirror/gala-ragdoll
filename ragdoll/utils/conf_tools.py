@@ -228,13 +228,11 @@ class ConfTools(object):
         dict1 = json.loads(real_conf)
         dict2 = json.loads(man_conf)
 
-        res = ""
+        res = SYNCHRONIZED
         for src_list, dst_list in zip(sorted(dict1), sorted(dict2)):
             if str(dict1[src_list]) != str(dict2[dst_list]):
                 res = NOTSYNCHRONIZE
-        if not res:
-            res = SYNCHRONIZED
-
+                break
         return res
 
     def getRpmInfo(self, path):
@@ -341,15 +339,15 @@ class ConfTools(object):
         ll_res_list = ll_res.split(SPACE)
 
         fileType = ll_res_list[0]
-        permssions = "0"
+        permissions = "0"
         for perm in range(0, PERMISSION):
             items = fileType[1 + perm * PERMISSION: (perm + 1) * PERMISSION + 1]
             value = 0
             for d_item in items:
                 d_item_value = self.switch_perm(d_item)
                 value = value + d_item_value
-            permssions = permssions + str(value)
-        LOGGER.debug("the perssion is : {}".format(permssions))
+            permissions = permissions + str(value)
+        LOGGER.debug("the permission is : {}".format(permissions))
 
         fileOwner = LeftParen + ll_res_list[2] + SPACE + ll_res_list[3] + RightParen
         LOGGER.debug("the fileOwner is : {}".format(fileOwner))
