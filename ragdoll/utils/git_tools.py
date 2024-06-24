@@ -6,8 +6,7 @@ import ast
 
 from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.log.log import LOGGER
-from ragdoll.models.git_log_message import GitLogMessage
-from ragdoll.controllers.format import Format
+from ragdoll.utils.format import Format
 
 
 class GitTools(object):
@@ -113,24 +112,24 @@ class GitTools(object):
 
         LOGGER.debug("count is : {}".format(count))
         for index in range(0, count):
-            gitMessage = GitLogMessage()
+            gitMessage = {}
             for temp in range(0, singleLogLen):
                 line = lines[index * singleLogLen + temp]
                 value = line.split(" ", 1)[-1]
                 if "commit" in line:
-                    gitMessage.change_id = value
+                    gitMessage["changeId"] = value
                 if "Author" in line:
-                    gitMessage.author = value
+                    gitMessage["author"] = value
                 if "Date" in line:
-                    gitMessage._date = value[2:]
-            gitMessage.change_reason = lines[index * singleLogLen + 4]
+                    gitMessage["date"] = value[2:]
+            gitMessage["changeReason"] = lines[index * singleLogLen + 4]
             LOGGER.debug("gitMessage is : {}".format(gitMessage))
             gitLogMessageList.append(gitMessage)
 
         LOGGER.debug("################# gitMessage start ################")
         if count == 1:
             last_message = gitLogMessageList[0]
-            last_message.post_value = Format.get_file_content_by_read(path)
+            last_message["postValue"] = Format.get_file_content_by_read(path)
             os.chdir(cwdDir)
             return gitLogMessageList
 
@@ -138,13 +137,13 @@ class GitTools(object):
             LOGGER.debug("index is : {}".format(index))
             message = gitLogMessageList[index]
             next_message = gitLogMessageList[index + 1]
-            message.post_value = Format.get_file_content_by_read(path)
-            shell = ['git checkout {}'.format(next_message.change_id)]
+            message["postValue"] = Format.get_file_content_by_read(path)
+            shell = ['git checkout {}'.format(next_message["changeId"])]
             output = self.run_shell_return_output(shell)
-            message.pre_value = Format.get_file_content_by_read(path)
+            message["preValue"] = Format.get_file_content_by_read(path)
         # the last changlog
         first_message = gitLogMessageList[count - 1]
-        first_message.post_value = Format.get_file_content_by_read(path)
+        first_message["postValue"] = Format.get_file_content_by_read(path)
 
         LOGGER.debug("################# gitMessage end ################")
         os.chdir(cwdDir)

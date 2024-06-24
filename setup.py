@@ -26,7 +26,7 @@ setup(
     package_data={'': ['swagger/swagger.yaml']},
     include_package_data=True,
     entry_points={
-        'console_scripts': ['ragdoll=ragdoll.__main__:main']},
+        'console_scripts': ['ragdoll=ragdoll.manage:main']},
     long_description="""\
     A
     """

@@ -6,7 +6,7 @@ from enum import Enum
 
 from ragdoll.const.conf_handler_const import CONFIG
 from ragdoll.utils.git_tools import GitTools
-from ragdoll.controllers.format import Format
+from ragdoll.utils.format import Format
 from ragdoll.log.log import LOGGER
 from ragdoll.models.real_conf import RealConf
 from ragdoll.models.real_conf_path import RealConfPath
