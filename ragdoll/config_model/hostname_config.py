@@ -1,5 +1,5 @@
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (C) 2023 isoftstone Technologies Co., Ltd. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -59,6 +59,9 @@ class HostnameConfig(BaseHandlerConfig):
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
+        if not dst_conf_dict or not src_conf_dict:
+            res = NOT_SYNCHRONIZE
+            return res
         if dst_conf_dict[0] != src_conf_dict[0]:
             res = NOT_SYNCHRONIZE
 
