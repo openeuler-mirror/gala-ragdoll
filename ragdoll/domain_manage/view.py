@@ -19,6 +19,7 @@ Description:
 import os
 import shutil
 
+import connexion
 from vulcanus.restful.resp.state import SUCCEED, SERVER_ERROR, PARAM_ERROR
 from vulcanus.restful.response import BaseResponse
 
@@ -45,7 +46,6 @@ class CreateDomain(BaseResponse):
         Returns:
             dict: response body
         """
-        print("create domain")
         successDomain = []
         failedDomain = []
         tempDomainName = params.get("domainName")
@@ -74,6 +74,9 @@ class CreateDomain(BaseResponse):
             else:
                 codeString = Format.splicErrorString("domain", "created", successDomain, failedDomain)
 
+        # 对successDomain成功的domain添加文件监控开关、告警开关
+        Format.add_domain_conf_trace_flag(params, successDomain, tempDomainName)
+
         return self.response(code=codeNum, message=codeString)
 
 
@@ -81,12 +84,17 @@ class DeleteDomain(BaseResponse):
 
     @BaseResponse.handle(schema=DeleteDomainSchema, token=True)
     def delete(self, **params):
+        access_token = connexion.request.headers.get("access_token")
         domainName = params.get("domainName")
 
         if not domainName:
             codeString = "The entered domain is empty"
             return self.response(code=PARAM_ERROR, message=codeString)
-
+        # 1.清理agith
+        # 获取domain下的host ids
+        host_ids = Format.get_hostid_list_by_domain(domainName)
+        if len(host_ids) > 0:
+            Format.uninstall_trace(access_token, host_ids, domainName)
         successDomain = []
         failedDomain = []
 
@@ -105,6 +113,9 @@ class DeleteDomain(BaseResponse):
         else:
             codeNum = SERVER_ERROR
             codeString = Format.splicErrorString("domain", "delete", successDomain, failedDomain)
+
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        Format.clear_all_domain_data(access_token, domainName, successDomain, host_ids)
 
         return self.response(code=codeNum, message=codeString)
 
