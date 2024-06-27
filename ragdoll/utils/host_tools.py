@@ -78,8 +78,6 @@ class HostTools(object):
         LOGGER.debug("The domainHost is : {}".format(domainHost))
         for d_host in domainHost:
             hostId = int(d_host.get('host_id'))
-            d_host = {}
-            d_host["hostId"] = hostId
             res.append(hostId)
 
         return res

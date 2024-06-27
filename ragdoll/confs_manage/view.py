@@ -56,9 +56,9 @@ class GetTheSyncStatusOfDomain(BaseResponse):
             return base_rsp, code_num
 
         # get manage confs in domain
-        base_rsp, code_num, manage_confs = Format.get_domain_conf(domain)
-        if code_num != 200:
-            return base_rsp, code_num
+        code_num, code_string, manage_confs = Format.get_domain_conf(domain)
+        if not manage_confs:
+            return self.response(code=SUCCEED, message=code_string, data=manage_confs)
 
         # get real conf in host
         host_id = Format.get_host_id_by_ip(ip, domain)
@@ -327,8 +327,7 @@ class QuerySupportedConfs(BaseResponse):
         for conf in conf_files:
             exist_conf_list.append(conf.get('file_path'))
 
-        return self.response(code=SUCCEED, message="successfully query supported confs",
-                             data=list(set(yang_conf_list).difference(set(exist_conf_list))))
+        return list(set(yang_conf_list).difference(set(exist_conf_list)))
 
 
 class CompareConfDiff(BaseResponse):
@@ -391,9 +390,9 @@ class BatchSyncConfToHostFromDomain(BaseResponse):
 
         # 根据domain和ip获取有哪些不同步的文件
         # get manage confs in domain
-        base_resp, code_num, manage_confs = Format.get_domain_conf(domain)
-        if code_num != 200:
-            return base_rsp, code_num
+        code_num, code_string, manage_confs = Format.get_domain_conf(domain)
+        if not manage_confs:
+            return self.response(code=SUCCEED, message=code_string, data=manage_confs)
 
         # get real conf in host
         real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids, access_token)
