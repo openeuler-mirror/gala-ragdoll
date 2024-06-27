@@ -28,10 +28,10 @@ from vulcanus.restful.response import BaseResponse
 
 from ragdoll.conf.constant import TARGETDIR
 from ragdoll.const.conf_handler_const import DIRECTORY_FILE_PATH_LIST
-from ragdoll.function.verify.domain_conf import AddManagementConfsSchema, UploadManagementConfsSchema, \
+from ragdoll.function.verify.domain_conf import AddManagementConfsSchema, \
     DeleteManagementConfsSchema, GetManagementConfsSchema, QueryChangelogSchema
 from ragdoll.log.log import LOGGER
-from ragdoll.models import ConfFiles, ConfFile, ExceptedConfInfo, ConfBaseInfo
+from ragdoll.models import ConfFiles, ExceptedConfInfo
 from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.format import Format
 from ragdoll.utils.git_tools import GitTools
@@ -51,6 +51,7 @@ class AddManagementConfsInDomain(BaseResponse):
 
             :rtype: BaseResponse
             """
+        global file_paths, reps
         accessToken = request.headers.get("access_token")
         domain = params.get("domainName")
         conf_files = params.get("confFiles")
@@ -242,6 +243,11 @@ class AddManagementConfsInDomain(BaseResponse):
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
 
+        # 根据agith_success_conf 更新agith的配置
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domain, accessToken)
+        if len(conf_files_list) > 0:
+            Format.update_agith(accessToken, conf_files_list, domain)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -257,6 +263,7 @@ class UploadManagementConfsInDomain(BaseResponse):
 
             :rtype: BaseResponse
             """
+        access_token = connexion.request.headers.get("access_token")
         file = connexion.request.files['file']
 
         filePath = connexion.request.form.get("filePath")
@@ -349,6 +356,11 @@ class UploadManagementConfsInDomain(BaseResponse):
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
 
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domainName, access_token)
+        if len(conf_files_list) > 0:
+            Format.update_agith(access_token, conf_files_list, domainName)
+
         return self.response(code=codeNum, message=codeString)
 
 
@@ -364,6 +376,7 @@ class DeleteManagementConfsInDomain(BaseResponse):
 
             :rtype: BaseResponse
             """
+        access_token = connexion.request.headers.get("access_token")
         #  check whether the domain exists
         domain = params.get("domainName")
 
@@ -436,6 +449,10 @@ class DeleteManagementConfsInDomain(BaseResponse):
             codeNum = PARAM_ERROR
             codeString = Format.splicErrorString("confs", "delete management conf", successConf, failedConf)
             codeString += "\n The reason for the failure is: these paths do not exist."
+
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domain, access_token)
+        Format.update_agith(access_token, conf_files_list, domain)
 
         return self.response(code=codeNum, message=codeString)
 

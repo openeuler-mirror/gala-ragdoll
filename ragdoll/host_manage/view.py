@@ -20,6 +20,7 @@ import ast
 import json
 import os
 
+import connexion
 from vulcanus.restful.resp.state import PARAM_ERROR, SUCCEED, PARTIAL_SUCCEED, SERVER_ERROR
 from vulcanus.restful.response import BaseResponse
 
@@ -44,7 +45,7 @@ class AddHostInDomain(BaseResponse):
 
         :rtype: BaseResponse
         """
-
+        access_token = connexion.request.headers.get("access_token")
         domain = params.get("domainName")
         host_infos = params.get("hostInfos")
 
@@ -75,17 +76,22 @@ class AddHostInDomain(BaseResponse):
 
         # Check whether the current host exists in the domain.
         for host in host_infos:
-            hostPath = os.path.join(domainPath, "hostRecord.txt")
-            if os.path.isfile(hostPath):
-                isContained = Format.isContainedHostIdInfile(hostPath, host.get("hostId"))
-                if isContained:
-                    failedHost.append(host.get("hostId"))
+            # 判断这个hostId是否在其他业务域中
+            contained_flag = Format.isContainedHostIdInOtherDomain(host.get("hostId"))
+            if contained_flag:
+                failedHost.append(host.get("hostId"))
+            else:
+                hostPath = os.path.join(domainPath, "hostRecord.txt")
+                if os.path.isfile(hostPath):
+                    isContained = Format.isContainedHostIdInfile(hostPath, host.get("hostId"))
+                    if isContained:
+                        failedHost.append(host.get("hostId"))
+                    else:
+                        Format.addHostToFile(hostPath, host)
+                        successHost.append(host.get("hostId"))
                 else:
                     Format.addHostToFile(hostPath, host)
                     successHost.append(host.get("hostId"))
-            else:
-                Format.addHostToFile(hostPath, host)
-                successHost.append(host.get("hostId"))
 
         if len(failedHost) == len(host_infos):
             codeNum = PARAM_ERROR
@@ -106,6 +112,9 @@ class AddHostInDomain(BaseResponse):
             commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +
                                               "the host including : {}".format(successHost))
 
+        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
+        Format.install_update_agith(access_token, domain, successHost)
+
         return self.response(code=codeNum, message=codeString)
 
 
@@ -121,6 +130,7 @@ class DeleteHostInDomain(BaseResponse):
 
             :rtype: BaseResponse
             """
+        access_token = connexion.request.headers.get("access_token")
         domain = params.get("domainName")
         hostInfos = params.get("hostInfos")
 
@@ -212,6 +222,8 @@ class DeleteHostInDomain(BaseResponse):
             git_tools = GitTools()
             commit_code = git_tools.gitCommit("Delete the host in {} domian, ".format(domain) +
                                               "the host including : {}".format(containedInHost))
+        # # 根据containedInHost 停止agith服务，删除agith，删除redis key值
+        Format.uninstall_hosts_agith(access_token, containedInHost, domain)
 
         return self.response(code=codeNum, message=codeString)
 
@@ -247,7 +259,7 @@ class GetHostByDomainName(BaseResponse):
         domainPath = os.path.join(TARGETDIR, domain)
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
-            codeNum = PARAM_ERROR
+            codeNum = SUCCEED
             return self.response(code=codeNum,
                                  message="The host information is not set in the current domain. Please add the host "
                                          "information first.")
