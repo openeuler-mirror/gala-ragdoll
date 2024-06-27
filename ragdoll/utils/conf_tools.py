@@ -614,6 +614,7 @@ class ConfTools(object):
         host_sync_status_address = ast.literal_eval(cf.get("sync_status", "host_sync_status_address"))
         add_host_sync_status_api = ast.literal_eval(cf.get("sync_status", "add_host_sync_status_api"))
         delete_host_sync_status_api = ast.literal_eval(cf.get("sync_status", "delete_host_sync_status_api"))
+        delete_all_host_sync_status_api = ast.literal_eval(cf.get("sync_status", "delete_all_host_sync_status_api"))
         host_sync_status_port = str(cf.get("sync_status", "host_sync_status_port"))
         add_host_sync_status_url = "{address}:{port}{api}".format(address=host_sync_status_address,
                                                                   api=add_host_sync_status_api,
@@ -621,10 +622,26 @@ class ConfTools(object):
         delete_host_sync_status_url = "{address}:{port}{api}".format(address=host_sync_status_address,
                                                                      api=delete_host_sync_status_api,
                                                                      port=host_sync_status_port)
+        delete_all_host_sync_status_url = "{address}:{port}{api}".format(address=host_sync_status_address,
+                                                                         api=delete_all_host_sync_status_api,
+                                                                         port=host_sync_status_port)
+
+        conf_trace_mgmt_address = ast.literal_eval(cf.get("conf_trace", "conf_trace_mgmt_address"))
+        conf_trace_mgmt_api = ast.literal_eval(cf.get("conf_trace", "conf_trace_mgmt_api"))
+        conf_trace_delete_api = ast.literal_eval(cf.get("conf_trace", "conf_trace_delete_api"))
+        conf_trace_port = str(cf.get("conf_trace", "conf_trace_port"))
+        conf_trace_mgmt_url = "{address}:{port}{api}".format(address=conf_trace_mgmt_address,
+                                                             api=conf_trace_mgmt_api,
+                                                             port=conf_trace_port)
+        conf_trace_delete_url = "{address}:{port}{api}".format(address=conf_trace_mgmt_address,
+                                                               api=conf_trace_delete_api,
+                                                               port=conf_trace_port)
 
         url = {"collect_url": collect_url, "sync_url": sync_url, "object_file_url": object_file_url,
                "batch_sync_url": batch_sync_url, "add_host_sync_status_url": add_host_sync_status_url,
-               "delete_host_sync_status_url": delete_host_sync_status_url}
+               "delete_host_sync_status_url": delete_host_sync_status_url,
+               "delete_all_host_sync_status_url": delete_all_host_sync_status_url,
+               "conf_trace_mgmt_url": conf_trace_mgmt_url, "conf_trace_delete_url": conf_trace_delete_url}
         return url
 
     def load_port_by_conf(self):

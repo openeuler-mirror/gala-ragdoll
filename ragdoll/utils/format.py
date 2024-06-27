@@ -97,6 +97,23 @@ class Format(object):
         return isContained
 
     @staticmethod
+    def isContainedHostIdInOtherDomain(content):
+        from ragdoll.conf.constant import TARGETDIR
+        isContained = False
+        contents = os.listdir(TARGETDIR)
+        folders = [f for f in contents if os.path.isdir(os.path.join(TARGETDIR, f))]
+        for folder in folders:
+            hostPath = os.path.join(os.path.join(TARGETDIR, folder), "hostRecord.txt")
+            if os.path.isfile(hostPath):
+                with open(hostPath, 'r') as d_file:
+                    for line in d_file.readlines():
+                        line_dict = json.loads(str(ast.literal_eval(line)).replace("'", "\""))
+                        if content == line_dict["host_id"]:
+                            isContained = True
+                            break
+        return isContained
+
+    @staticmethod
     def addHostToFile(d_file, host):
         host = {'host_id': host["hostId"], 'ip': host["ip"], 'ipv6': host["ipv6"]}
         info_json = json.dumps(str(host), sort_keys=False, indent=4, separators=(',', ': '))
@@ -241,7 +258,7 @@ class Format(object):
         hostlist = []
         domainPath = os.path.join(TARGETDIR, domainName)
         hostPath = os.path.join(domainPath, "hostRecord.txt")
-        if not os.path.isfile(hostPath) or os.stat(hostPath).st_size == 0:
+        if not os.path.exists(hostPath):
             return hostlist
         try:
             with open(hostPath, 'r') as d_file:
@@ -467,12 +484,13 @@ class Format(object):
         base_resp = None
         # get the host info in domain
         LOGGER.debug("Get the conf by domain: {}.".format(domain))
+        code_string = "get domain confs succeed"
         host_ids = Format.get_hostid_list_by_domain(domain)
         if not host_ids:
             code_num = 404
-            base_resp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
-                                     "Please add host information to the domain.")
-            return base_resp, code_num, list()
+            code_string = "The host currently controlled in the domain is empty. Please add host information to the " \
+                          "domain. "
+            return code_num, code_string, list()
 
         # get the managent conf in domain
         man_conf_res_text = Format.get_manageconf_by_domain(domain)
@@ -480,10 +498,10 @@ class Format(object):
 
         if len(manage_confs) == 0:
             code_num = 404
-            base_resp = BaseResponse(code_num, "The configuration is not set in the current domain." +
-                                     "Please add the configuration information first.")
-            return base_resp, code_num, list()
-        return base_resp, code_num, manage_confs
+            code_string = "The configuration is not set in the current domain. Please add the configuration " \
+                          "information first. "
+            return code_num, code_string, list()
+        return code_num, code_string, manage_confs
 
     @staticmethod
     def diff_mangeconf_with_realconf(domain, real_conf_res_text, manage_confs):
@@ -726,6 +744,9 @@ class Format(object):
         # 数据入库
         try:
             for host in host_infos:
+                contained_flag = Format.isContainedHostIdInOtherDomain(host.get("hostId"))
+                if contained_flag:
+                    continue
                 host_sync_status = {
                     "host_id": host.get("hostId"),
                     "host_ip": host.get("ip"),
@@ -904,3 +925,214 @@ class Format(object):
                 real_conf_res_text_list.append(signal_host_infos)
             real_conf_res_text_dict[domain] = real_conf_res_text_list
         return real_conf_res_text_dict
+
+    @staticmethod
+    def add_domain_conf_trace_flag(params, successDomain, tempDomainName):
+        # 对successDomain成功的domain添加文件监控开关、告警开关
+        if len(successDomain) > 0:
+            from vulcanus.database.proxy import RedisProxy
+            # 文件监控开关
+            conf_change_flag = params.get("conf_change_flag")
+            if conf_change_flag:
+                RedisProxy.redis_connect.set(tempDomainName + "_conf_change", 1)
+            else:
+                RedisProxy.redis_connect.set(tempDomainName + "_conf_change", 0)
+            # 告警开关
+            report_flag = params.get("report_flag")
+            if report_flag:
+                RedisProxy.redis_connect.set(tempDomainName + "_report", 1)
+            else:
+                RedisProxy.redis_connect.set(tempDomainName + "_report", 0)
+
+    @staticmethod
+    def uninstall_trace(access_token, host_ids, domain):
+        from ragdoll.utils.conf_tools import ConfTools
+        conf_tools = ConfTools()
+        conf_trace_mgmt_url = conf_tools.load_url_by_conf().get("conf_trace_mgmt_url")
+        headers = {"Content-Type": "application/json", "access_token": access_token}
+        # 数据入库
+        try:
+            conf_trace_mgmt_data = {
+                "host_ids": host_ids,
+                "action": "stop",
+                "domain_name": domain
+            }
+            conf_trace_mgmt_response = requests.put(conf_trace_mgmt_url,
+                                                    data=json.dumps(conf_trace_mgmt_data), headers=headers)
+            resp_code = json.loads(conf_trace_mgmt_response.text).get('code')
+            if resp_code != "200":
+                LOGGER.error(
+                    "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+
+    @staticmethod
+    def clear_all_domain_data(access_token, domainName, successDomain, host_ids):
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        if len(successDomain) > 0:
+            from vulcanus.database.proxy import RedisProxy
+            # 1.清理redis key值
+            RedisProxy.redis_connect.delete(domainName + "_conf_change")
+            RedisProxy.redis_connect.delete(domainName + "_report")
+            # 2.清理数据库数据，以避免再次添加业务域的时候还能看到以往的记录
+            Format.delete_conf_trace_infos(access_token, [], domainName)
+            # 3.清理domain下面的host sync记录
+            Format.delete_host_conf_sync_status(access_token, domainName, host_ids)
+
+    @staticmethod
+    def get_conf_change_flag(domain):
+        from vulcanus.database.proxy import RedisProxy
+        domain_conf_change = RedisProxy.redis_connect.get(domain + "_conf_change")
+        return domain_conf_change
+
+    @staticmethod
+    def install_update_agith(access_token, domain, host_ids):
+        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
+        install_resp_code = "200"
+        # 获取domain的文件监控开关
+        domain_conf_change = Format.get_conf_change_flag(domain)
+        conf_files_list = Format.get_conf_files_list(domain, access_token)
+        if len(host_ids) > 0 and int(domain_conf_change) == 1 and len(conf_files_list) > 0:
+            # 安装并启动agith
+            from ragdoll.utils.conf_tools import ConfTools
+            conf_tools = ConfTools()
+            conf_trace_mgmt_url = conf_tools.load_url_by_conf().get("conf_trace_mgmt_url")
+            headers = {"Content-Type": "application/json", "access_token": access_token}
+            try:
+                conf_trace_mgmt_data = {
+                    "domain_name": domain,
+                    "host_ids": host_ids,
+                    "action": "start",
+                    "conf_files": conf_files_list
+                }
+                conf_trace_mgmt_response = requests.put(conf_trace_mgmt_url,
+                                                        data=json.dumps(conf_trace_mgmt_data), headers=headers)
+                install_resp_code = json.loads(conf_trace_mgmt_response.text).get('code')
+                LOGGER.info(f"install_resp_code is {install_resp_code}")
+                if install_resp_code != "200":
+                    LOGGER.error(
+                        "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+            except requests.exceptions.RequestException as connect_ex:
+                LOGGER.error(f"An error occurred: {connect_ex}")
+                LOGGER.error(
+                    "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+
+            # 根据业务有是否有配置，有配置并且agith启动成功情况下进行agith的配置
+            conf_files_list = Format.get_conf_files_list(domain, access_token)
+            if len(conf_files_list) > 0 and install_resp_code == "200":
+                Format.update_agith_conf(conf_files_list, conf_trace_mgmt_url, headers, host_ids, domain)
+
+    @staticmethod
+    def uninstall_hosts_agith(access_token, containedInHost, domain):
+        # 根据containedInHost 停止agith服务，删除agith，删除redis key值
+        if len(containedInHost) > 0:
+            # 1.根据containedInHost 停止agith服务，删除agith
+            from vulcanus.database.proxy import RedisProxy
+            Format.uninstall_trace(access_token, containedInHost, domain)
+            # 2.清理数据库数据，以避免再次添加业务域的时候还能看到以往的记录
+            Format.delete_conf_trace_infos(access_token, containedInHost, domain)
+            # 3.清理host sync记录
+            Format.delete_host_conf_sync_status(access_token, domain, containedInHost)
+
+    @staticmethod
+    def delete_conf_trace_infos(access_token, containedInHost, domain):
+        from ragdoll.utils.conf_tools import ConfTools
+        conf_tools = ConfTools()
+        conf_trace_delete_url = conf_tools.load_url_by_conf().get("conf_trace_delete_url")
+        headers = {"Content-Type": "application/json", "access_token": access_token}
+        # 数据入库
+        try:
+            conf_trace_delete_data = {
+                "domain_name": domain,
+                "host_ids": containedInHost
+            }
+            conf_trace_delete_response = requests.post(conf_trace_delete_url,
+                                                       data=json.dumps(conf_trace_delete_data), headers=headers)
+            resp_code = json.loads(conf_trace_delete_response.text).get('code')
+            if resp_code != "200":
+                LOGGER.error(
+                    "Failed to delete trace info, please check the interface of /conftrace/delete.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to delete trace info, please check the interface of /conftrace/delete.")
+
+    @staticmethod
+    def get_conf_files_list(domain, access_token):
+        conf_files_list = []
+        conf_files = Format.get_manageconf_by_domain(domain).get("conf_files")
+        for conf_file in conf_files:
+            if conf_file.get("file_path") in DIRECTORY_FILE_PATH_LIST:
+                # 获取文件夹下面的配置文件
+                from ragdoll.utils.object_parse import ObjectParse
+                object_parse = ObjectParse()
+                d_conf = {"filePath": conf_file.get("file_path")}
+                host_ids = Format.get_hostid_list_by_domain(domain)
+                if len(host_ids):
+                    _, _, file_paths = object_parse.get_directory_files(d_conf, host_ids[0], access_token)
+                    if len(file_paths) > 0:
+                        conf_files_list.extend(file_paths)
+            else:
+                conf_files_list.append(conf_file.get("file_path"))
+        return conf_files_list
+
+    @staticmethod
+    def update_agith(access_token, conf_files_list, domain):
+        # 根据containedInHost,监控开关 停止agith服务，删除agith，删除redis key值
+        domain_conf_change_flag = Format.get_conf_change_flag(domain)
+        if int(domain_conf_change_flag) == 1:
+            from ragdoll.utils.conf_tools import ConfTools
+            # 根据containedInHost 停止agith服务，删除agith
+            conf_tools = ConfTools()
+            conf_trace_mgmt_url = conf_tools.load_url_by_conf().get("conf_trace_mgmt_url")
+            headers = {"Content-Type": "application/json", "access_token": access_token}
+            # 获取domain下的主机id
+            host_ids = Format.get_hostid_list_by_domain(domain)
+            # 数据入库
+            if len(host_ids) > 0:
+                Format.update_agith_conf(conf_files_list, conf_trace_mgmt_url, headers, host_ids, domain)
+
+    @staticmethod
+    def update_agith_conf(conf_files_list, conf_trace_mgmt_url, headers, host_ids, domain_name):
+        try:
+            conf_trace_mgmt_data = {
+                "host_ids": host_ids,
+                "action": "update",
+                "conf_files": conf_files_list,
+                "domain_name": domain_name
+            }
+            conf_trace_mgmt_response = requests.put(conf_trace_mgmt_url,
+                                                    data=json.dumps(conf_trace_mgmt_data), headers=headers)
+            resp_code = json.loads(conf_trace_mgmt_response.text).get('code')
+            if resp_code != "200":
+                LOGGER.error(
+                    "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+
+    @staticmethod
+    def delete_host_conf_sync_status(access_token, domainName, hostIds):
+        try:
+            from ragdoll.utils.conf_tools import ConfTools
+            conf_tools = ConfTools()
+            delete_all_host_sync_status_url = conf_tools.load_url_by_conf().get("delete_all_host_sync_status_url")
+            headers = {"Content-Type": "application/json", "access_token": access_token}
+            delete_host_conf_sync_status_data = {
+                "host_ids": hostIds,
+                "domain_name": domainName
+            }
+            delete_sync_status_response = requests.post(delete_all_host_sync_status_url,
+                                                        data=json.dumps(delete_host_conf_sync_status_data),
+                                                        headers=headers)
+            resp_code = json.loads(delete_sync_status_response.text).get('code')
+            if resp_code != "200":
+                LOGGER.error(
+                    "Failed to delete sync status, please check the interface of /manage/all/host/sync/status/delete.")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to delete sync status, please check the interface of /manage/all/host/sync/status/delete.")

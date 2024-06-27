@@ -190,7 +190,6 @@ class ObjectParse(object):
             codeString = "Failed to sync configuration, please check the interface of config/objectfile."
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
-        LOGGER.info(f"Get directory files response: {response.text}")
         response_code = json.loads(response.text).get("code")
         if response_code is None:
             codeNum = 500
