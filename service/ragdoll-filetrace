@@ -1,0 +1,782 @@
+#!/usr/bin/python3
+from bpfcc import BPF 
+import json
+import os 
+import requests
+import threading
+import psutil
+import ctypes
+
+import logging
+import logging.handlers
+logger = logging.getLogger(__name__)
+syslog_handler = logging.handlers.SysLogHandler(address='/dev/log')
+syslog_handler.setLevel(logging.DEBUG)
+syslog_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(syslog_handler)
+
+
+bpf_text="""
+//#define randomized_struct_fields_start  struct {
+//#define randomized_struct_fields_end    };
+
+#include <uapi/linux/bpf.h>
+#include <linux/dcache.h>
+#include <linux/err.h>
+#include <linux/fdtable.h>
+#include <linux/fs.h>
+#include <linux/fs_struct.h>
+#include <linux/path.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+
+#define MAX_DEPTH 4
+#define MAX_DIRNAME_LEN 16
+#define MAX_FILENAME_LEN 32
+#define MAX_CMD_LEN 32
+#define MAX_TASK_COMM_LEN 32
+
+#define ARGSIZE 16
+#define MAX_ARGS 4
+
+
+struct pinfo_t {
+    char comm[MAX_CMD_LEN];
+    unsigned int ppid;
+    char arg1[ARGSIZE];
+    char arg2[ARGSIZE];
+    char arg3[ARGSIZE];
+    char arg4[ARGSIZE];
+
+};
+
+
+struct event {
+    unsigned int pid;
+    unsigned int ppid;
+    char cmd[16];
+    char pcmd[16];
+    unsigned long i_ino;
+    char filename[MAX_FILENAME_LEN];
+    char dir1[MAX_DIRNAME_LEN];
+    char dir2[MAX_DIRNAME_LEN];
+    char dir3[MAX_DIRNAME_LEN];
+    char dir4[MAX_DIRNAME_LEN];
+
+    char oldfilename[MAX_FILENAME_LEN];
+    char odir1[MAX_DIRNAME_LEN];
+    char odir2[MAX_DIRNAME_LEN];
+    char odir3[MAX_DIRNAME_LEN];
+    char odir4[MAX_DIRNAME_LEN];
+    int flag;
+};
+
+BPF_HASH(exec_map, u32, struct pinfo_t);
+BPF_PERF_OUTPUT(events);
+
+//for rm command
+TRACEPOINT_PROBE(syscalls, sys_enter_unlinkat) {
+    struct task_struct* t;
+    struct task_struct* p;
+
+    struct event e = {}; 
+    e.flag = 4;
+
+    t = (struct task_struct*)bpf_get_current_task();
+    bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+    bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+
+    bpf_probe_read(&p, sizeof(p), &t->real_parent);
+    bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+    bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+    bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)args->pathname);
+    bpf_trace_printk("Process calling sys_enter_rename newfilename:%s \\n", e.filename);
+    events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
+    return 0;
+}
+
+//for copy command
+TRACEPOINT_PROBE(syscalls, sys_enter_copy_file_range) {
+
+    struct task_struct* t;
+    struct task_struct* p;
+    struct files_struct* f;
+    struct fdtable* fdt;
+    struct file** fdd;
+    struct file* file;
+    struct path path;
+    struct dentry* dentry;
+    struct inode* inode;
+    struct qstr pathname;
+    umode_t mode;
+    unsigned long i_ino;
+
+    //char filename[128];
+    struct event e = {}; 
+    e.flag = 2;
+
+    int fd =args->fd_out;
+    t = (struct task_struct*)bpf_get_current_task();
+    if(t){
+        bpf_probe_read(&f, sizeof(f), &(t->files));
+        bpf_probe_read(&fdt, sizeof(fdt), (void*)&f->fdt);
+        int ret = bpf_probe_read(&fdd, sizeof(fdd), (void*)&fdt->fd); 
+        if (ret) {
+            //bpf_trace_printk("bpf_probe_read failed: %d\\n", ret);
+            return 0;
+        }
+        bpf_probe_read(&file, sizeof(file), (void*)&fdd[fd]);
+       
+        //file file ppid pcmd
+        bpf_probe_read(&p, sizeof(p), &t->real_parent);
+        bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+        bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+        //fill file ino
+        bpf_probe_read(&inode, sizeof(inode), &file->f_inode);
+        bpf_probe_read(&e.i_ino, sizeof(i_ino), &inode->i_ino);
+        bpf_probe_read(&mode, sizeof(mode), &inode->i_mode);
+        if(!S_ISREG(mode)){
+            return 0;
+        }
+
+        //file process info
+        bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+        bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+
+        //get filename
+        bpf_probe_read(&path, sizeof(path), (const void*)&file->f_path);
+        bpf_probe_read(&dentry, sizeof(dentry), (const void*)&path.dentry);
+        bpf_probe_read(&pathname, sizeof(pathname), (const void*)&dentry->d_name);
+
+        struct dentry* d_parent;
+
+        #pragma unroll
+        for (int i = 0; i < MAX_DEPTH; i++) {
+            bpf_probe_read(&d_parent, sizeof(d_parent), (const void*)&dentry->d_parent);
+            if (d_parent == dentry) {
+                break;
+            }
+            //fix me 
+            if(i == 0){
+                bpf_probe_read(&e.dir1, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 1){
+                bpf_probe_read(&e.dir2, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 2){
+                bpf_probe_read(&e.dir3, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 3){
+                bpf_probe_read(&e.dir4, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }
+             
+            dentry = d_parent;
+        }
+        bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)pathname.name);
+        events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
+        return 0;
+    }
+    return 0;
+}
+//for sed command
+TRACEPOINT_PROBE(syscalls, sys_enter_rename) {
+    struct task_struct* t;
+    struct task_struct* p;
+
+    struct event e = {}; 
+    e.flag = 1;
+
+    t = (struct task_struct*)bpf_get_current_task();
+    bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+    bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+
+    bpf_probe_read(&p, sizeof(p), &t->real_parent);
+    bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+    bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+    bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)args->newname);
+    //bpf_trace_printk("Process calling sys_enter_rename newfilename:%s \\n", e.filename);
+    events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
+    return 0;
+}
+
+TRACEPOINT_PROBE(syscalls, sys_enter_renameat) {
+    char comm[TASK_COMM_LEN];
+    bpf_get_current_comm(&comm, sizeof(comm));
+    bpf_trace_printk("Process %s is calling renameat\\n", comm);
+    return 0;
+}
+
+//for move command
+TRACEPOINT_PROBE(syscalls, sys_enter_renameat2) {
+    struct event e = {}; 
+    e.flag = 3;
+
+    struct task_struct* t;
+    struct task_struct* p;
+   
+    t = (struct task_struct*)bpf_get_current_task();
+    bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+    bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+
+    bpf_probe_read(&p, sizeof(p), &t->real_parent);
+    bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+    bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+    bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)args->newname);
+    bpf_probe_read_str((void*)&e.oldfilename, sizeof(e.oldfilename), (const void*)args->oldname);
+
+    struct fs_struct *fs; 
+    struct path pwd;
+    bpf_probe_read(&fs, sizeof(fs), (const void*)&t->fs);
+    bpf_probe_read(&pwd, sizeof(pwd), (const void*)&fs->pwd);
+
+    struct dentry* dentry;
+    bpf_probe_read(&dentry, sizeof(dentry), (const void*)&pwd.dentry);
+
+    struct dentry* d_parent;
+
+    int olddfd = args->olddfd;
+    int newdfd = args->newdfd;
+    if (newdfd == AT_FDCWD) {
+        #pragma unroll
+        for (int i = 0; i < MAX_DEPTH; i++) {
+            bpf_probe_read(&d_parent, sizeof(d_parent), (const void*)&dentry->d_parent);
+            if (d_parent == dentry) {
+                break;
+            }
+            //fix me 
+            if(i == 0){
+                bpf_probe_read(&e.dir1, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 1){
+                bpf_probe_read(&e.dir2, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 2){
+                bpf_probe_read(&e.dir3, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 3){
+                bpf_probe_read(&e.dir4, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }
+            dentry = d_parent;
+        }
+        bpf_trace_printk("newfilename relative to CWD: %s\\n", e.filename);
+    }
+
+    if (olddfd == AT_FDCWD) {
+        bpf_trace_printk("oldfilename relative to CWD: %s\\n", e.oldfilename);
+    }
+
+    events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
+
+    return 0;
+}
+
+TRACEPOINT_PROBE(syscalls, sys_exit_execve) {
+    u64 tgid_pid;
+    u32 tgid, pid;
+    tgid_pid = bpf_get_current_pid_tgid();
+    tgid = tgid_pid >> 32;
+    pid = (u32)tgid_pid;
+    exec_map.delete(&pid);
+    return 0;
+}
+
+TRACEPOINT_PROBE(syscalls, sys_enter_execve) {
+    //args, args->filename, args->argv, args->envp
+    struct pinfo_t p = {};
+
+    u64 tgid_pid;
+    u32 tgid, pid;
+    tgid_pid = bpf_get_current_pid_tgid();
+    tgid = tgid_pid >> 32;
+    pid = (u32)tgid_pid;
+
+    struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+    struct task_struct *pp;
+    bpf_probe_read(&pp, sizeof(pp), &t->real_parent);
+    bpf_probe_read(&p.ppid, sizeof(p.ppid), &pp->tgid);
+     
+    bpf_get_current_comm(&p.comm, sizeof(p.comm));
+
+    //int i;
+    //for (i = 1; i <= MAX_ARGS; i++) {
+    //    const char __user *argp;
+    //    bpf_probe_read_user(&argp, sizeof(argp), &args->argv[i]);
+    //    if (!argp) {
+    //        break; 
+    //    }
+    //    if(i == 1){
+    //        bpf_probe_read_user_str(&p.arg1, sizeof(p.args1), argp);
+    //    }else if(i == 2){
+    //        bpf_probe_read_user_str(&p.arg2, sizeof(p.args2), argp);
+    //    }else if(i == 3){
+    //        bpf_probe_read_user_str(&p.arg3, sizeof(p.args3), argp);
+    //    }else if(i == 4){
+    //        bpf_probe_read_user_str(&p.arg4, sizeof(p.args4), argp);
+    //    }
+    //}
+
+    const char *const * argv = args->argv;
+    if(!argv[1]){
+        return 0;
+    }
+    bpf_probe_read_user(&p.arg1, sizeof(p.arg1), (void *)argv[1]);
+
+    if(!argv[2]){
+        return 0;
+    }
+    bpf_probe_read_user(&p.arg2, sizeof(p.arg2), (void *)argv[2]);
+
+    if(!argv[3]){
+        return 0;
+    }
+    bpf_probe_read_user(&p.arg3, sizeof(p.arg3), (void *)argv[3]);
+
+    if(!argv[4]){
+        return 0;
+    }
+    bpf_probe_read_user(&p.arg4, sizeof(p.arg4), (void *)argv[4]);
+
+    exec_map.update(&pid, &p);
+    return 0;
+}
+
+//for vim echo ...
+TRACEPOINT_PROBE(syscalls, sys_enter_write) {
+    unsigned int fd;
+    struct task_struct* t;
+    struct task_struct* p;
+    struct files_struct* f;
+    struct fdtable* fdt;
+    struct file** fdd;
+    struct file* file;
+    struct path path;
+    struct dentry* dentry;
+    struct inode* inode;
+    struct qstr pathname;
+    umode_t mode;
+    unsigned long i_ino;
+    char filename[128];
+    struct event e = {}; 
+    e.flag = 0;
+    
+
+    pid_t ppid;
+    char pcomm[16];
+
+    fd =args->fd;
+    t = (struct task_struct*)bpf_get_current_task();
+    if(t){
+        bpf_probe_read(&f, sizeof(f), &(t->files));
+        bpf_probe_read(&fdt, sizeof(fdt), (void*)&f->fdt);
+        int ret = bpf_probe_read(&fdd, sizeof(fdd), (void*)&fdt->fd); 
+        if (ret) {
+            //bpf_trace_printk("bpf_probe_read failed: %d\\n", ret);
+            return 0;
+        }
+        bpf_probe_read(&file, sizeof(file), (void*)&fdd[fd]);
+       
+        //file file ppid pcmd
+        bpf_probe_read(&p, sizeof(p), &t->real_parent);
+        bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+        bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+        //fill file ino
+        bpf_probe_read(&inode, sizeof(inode), &file->f_inode);
+        bpf_probe_read(&e.i_ino, sizeof(i_ino), &inode->i_ino);
+        bpf_probe_read(&mode, sizeof(mode), &inode->i_mode);
+        if(!S_ISREG(mode)){
+            return 0;
+        }
+
+        //file process info
+        bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+        bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+        //bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+        //get filename
+        bpf_probe_read(&path, sizeof(path), (const void*)&file->f_path);
+        bpf_probe_read(&dentry, sizeof(dentry), (const void*)&path.dentry);
+        bpf_probe_read(&pathname, sizeof(pathname), (const void*)&dentry->d_name);
+        //fill name event
+        //bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)pathname.name);
+
+        struct dentry* d_parent;
+
+        #pragma unroll
+        for (int i = 0; i < MAX_DEPTH; i++) {
+            bpf_probe_read(&d_parent, sizeof(d_parent), (const void*)&dentry->d_parent);
+            if (d_parent == dentry) {
+                break;
+            }
+            //fix me 
+            if(i == 0){
+                bpf_probe_read(&e.dir1, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 1){
+                bpf_probe_read(&e.dir2, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 2){
+                bpf_probe_read(&e.dir3, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }else if(i == 3){
+                bpf_probe_read(&e.dir4, sizeof(d_parent->d_iname), (const void*)&d_parent->d_iname);
+            }
+             
+            dentry = d_parent;
+        }
+        bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)pathname.name);
+        //bpf_trace_printk("filename parent e.filename: %s\\n", e.filename);
+        events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
+
+        return 0;
+    }
+    return 0;
+}
+"""
+
+
+def get_conf():
+    CONF = "/etc/agith/agith.config"    
+    conf_data = {}
+    try:
+        with open(CONF) as user_file:
+            conf_data = json.load(user_file)
+    except FileNotFoundError:
+        print(f"[{CONF}] does not exist!")
+        exit(1)
+    return conf_data
+    #print(json.dumps(conf_data, indent = 4))
+
+def get_ino(filename_list):
+    global logger
+    filenames = filename_list.split(",")
+    ino_name_map = {}
+    for f in filenames:
+        try:
+            stat_info = os.stat(f)
+            i = stat_info.st_ino
+            ino_name_map [str(i)] = f
+        except FileNotFoundError:
+            print(f"File not found: [{f}]")
+            exit(1)
+        except Exception as e:
+            print(f"An error occurred with file {f}: {e}")
+            exit(1)
+    logger.warning("g_map:%s", ino_name_map)
+    return ino_name_map
+
+
+conf_data = get_conf()
+g_map = get_ino(conf_data["Repository"]["conf_list"])    
+
+def postdata(data=None):
+    global conf_data 
+    global g_map 
+    global logger
+    #logger.warning('post data: %s', data)
+    g_map = get_ino(conf_data["Repository"]["conf_list"])    
+    try:
+        aops_zeus = conf_data["Repository"]["aops_zeus"]
+        response = requests.post(aops_zeus, json=data, timeout=5)
+        response.raise_for_status()
+        if response.status_code != 200:
+            logger.info('POST request failed:', response.status_code)
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"HTTP error occurred: {http_err}")
+    except requests.exceptions.ConnectionError as conn_err:
+        logger.error(f"Connection error occurred: {conn_err}")
+    except requests.exceptions.Timeout as timeout_err:
+        logger.error(f"Timeout error occurred: {timeout_err}")
+    except requests.exceptions.RequestException as req_err:
+        logger.error(f"An error occurred: {req_err}")
+
+def get_oldfile_full_path(e):    
+    #dir depth  4
+    filename = ""
+    if e.flag != 3:
+       return filename 
+    dir1 = ""
+    dir2 = ""
+    dir3 = ""
+    dir4 = ""
+    try:
+        dir1 = e.odir1.decode('utf-8')
+        dir2 = e.odir2.decode('utf-8')
+        dir3 = e.odir3.decode('utf-8')
+        dir4 = e.odir4.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        print(f"UnicodeDecodeError: {ex}")
+
+    filename = e.oldfilename.decode('utf-8')
+    if not filename:
+        return ""
+
+    if dir1 == "/":
+        filename = dir1 + filename
+        return filename
+
+    if dir2 == "/":
+        filename = dir2 + dir1 + "/"  + filename
+        return filename
+
+    if dir3 == "/":
+        filename = dir3 + dir2 + "/" + dir1 + "/"  + filename
+        return filename
+
+    if dir4 == "/":
+        filename = dir4 + dir3 + "/" + dir2 + "/" + dir1 + "/"  + filename
+        return filename
+    return filename 
+
+def get_file_full_path(e):    
+    #dir depth  4
+    dir1 = ""
+    dir2 = ""
+    dir3 = ""
+    dir4 = ""
+    try:
+        dir1 = e.dir1.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        print(f"UnicodeDecodeError: {ex}")
+    try:
+        dir2 = e.dir2.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        print(f"UnicodeDecodeError: {ex}")
+    try:
+        dir3 = e.dir3.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        print(f"UnicodeDecodeError: {ex}")
+    try:
+        dir4 = e.dir4.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        print(f"UnicodeDecodeError: {ex}")
+
+    filename = e.filename.decode('utf-8')
+    if not filename:
+        return ""
+    #filename is full path
+    if os.path.exists(filename):
+        return filename
+
+    if dir1 == "/":
+        filename = dir1 + filename
+        return filename
+
+    if dir2 == "/":
+        filename = dir2 + dir1 + "/"  + filename
+        return filename
+
+    if dir3 == "/":
+        filename = dir3 + dir2 + "/" + dir1 + "/"  + filename
+        return filename
+
+    if dir4 == "/":
+        filename = dir4 + dir3 + "/" + dir2 + "/" + dir1 + "/"  + filename
+        return filename
+    return filename 
+
+class Data(ctypes.Structure):
+    _fields_ = [
+        ("comm", ctypes.c_char * 64),
+        ("ppid", ctypes.c_uint32),
+        ("arg1", ctypes.c_char * 16),
+        ("arg2", ctypes.c_char * 16),
+        ("arg3", ctypes.c_char * 16),
+        ("arg4", ctypes.c_char * 16),
+    ]
+
+
+def get_process_info_from_map(procid):
+    global exec_map
+    pid = procid
+    try:
+        pid = ctypes.c_int(pid)
+        info = exec_map[pid]
+        #info = ctypes.cast(ctypes.pointer(data), ctypes.POINTER(Data)).contents
+        pid = int(pid.value)
+        if info:
+            #print(f"PID: {pid}, Command: {info.comm}, Args: {info.args.decode('utf-8', 'ignore')}")
+            #cmd = info.comm.decode('utf-8') + " " + info.args.decode('utf-8', 'ignore')
+            #cmd = info.args.decode('utf-8', 'ignore')
+            str1 = info.arg1.decode('utf-8')
+            str2 = info.arg2.decode('utf-8')
+            str3 = info.arg3.decode('utf-8')
+            str4 = info.arg4.decode('utf-8')
+            cmd = str1 + " " + str2 + " " + str3 + " "  + str4
+            return {
+                'pid': pid,
+                'cmd': cmd,
+                }
+        else:
+            #print(f"No information found for PID {pid}")
+            return {
+                'pid': pid,
+                'error': 'error:No such process'
+            }
+    except KeyError:
+        pid = int(pid.value)
+        #print(f"key error for PID {pid}")
+        return {
+            'pid': pid,
+            'error': 'error:keyerror.'
+        }
+
+def get_ppid_by_pid(procid):
+    global exec_map
+    pid = procid
+    try:
+        pid = ctypes.c_int(pid)
+        info = exec_map[pid]
+        if info:
+            return info.ppid
+        else:
+            #print("not found,get ppid form local")
+            return get_parent_pid(pid)        
+    except KeyError:
+        #print("keyerror ,get ppid form local")
+        return get_parent_pid(pid)        
+    return 0
+
+def get_parent_pid(pid):
+    if not isinstance(pid, int):
+        pid = int(pid.value)
+    try:
+        with open(f"/proc/{pid}/status", "r") as f:
+            for line in f:
+                if line.startswith("PPid:"):
+                    parent_pid = int(line.split()[1])
+                    return parent_pid
+    except FileNotFoundError:
+        print(f"FileNotFoundError:/proc/{pid}/status")
+        return 0
+
+def get_process_info_from_local(pid):
+    try:
+        process = psutil.Process(pid)
+        name = process.name()
+        cmdline = process.cmdline()
+        return {
+            'pid': pid,
+            'cmd': name + " " + ''.join(map(str, cmdline)),
+        }
+    except psutil.NoSuchProcess:
+        return {
+            'pid': pid,
+            'error': 'error:No such process'
+        }
+    except psutil.AccessDenied:
+        return {
+            'pid': pid,
+            'error': 'error:Access denied'
+        }
+
+def make_process_tree(procid):
+    info = []
+    tmp = {}
+    flag = True
+    pid = procid
+    while flag:
+        tmp = get_process_info_from_map(pid)
+        if "error" in tmp:
+            tmp = get_process_info_from_local(pid)
+            if "error" in tmp:
+                break;
+            else:
+                info.append(tmp)
+        else:
+            info.append(tmp)
+
+        ppid = get_ppid_by_pid(pid)
+        if ppid == 0:
+            break;
+        else:
+            pid = ppid
+    return info
+
+def check_filename(newfile=None, oldfile=None):
+    global conf_data 
+    conf_file = conf_data["Repository"]["conf_list"]
+    if os.path.isdir(newfile):
+        return False
+   
+    newfile = remove_dot_slash(newfile)  
+    if newfile and newfile in conf_file:
+        return True
+
+    if oldfile and oldfile in conf_file:
+        return True
+
+    return False
+
+def remove_dot_slash(path):
+    if path.startswith('./'):
+        return path[2:]
+    return path
+
+def get_filename(newfile=None, oldfile=None):
+    global conf_data 
+    conf_file = conf_data["Repository"]["conf_list"]
+    if not oldfile:
+        return newfile
+
+    if oldfile in conf_file:
+        return oldfile
+    newfile = remove_dot_slash(newfile)  
+    if newfile in conf_file:
+        return newfile
+
+def process_event(cpu, data, size):
+    global b
+    global conf_data 
+    global g_map
+    global logger
+    global executor
+
+    e = b["events"].event(data)
+    fname = get_file_full_path(e)
+    oldname = get_oldfile_full_path(e)
+    filename = get_filename(fname, oldname) 
+    #print(f'post event filename:{fname} e.pid: {e.pid}')
+    #fixme 
+    if check_filename(fname, oldname):
+        #pid = ctypes.c_int(e.pid)
+        #get_process_info_map(pid)
+        aops_zeus =  conf_data["Repository"]["aops_zeus"]
+        d = {}
+        d["host_id"] = int(conf_data["Repository"]["host_id"])
+        d["domain_name"] = conf_data["Repository"]["domain_name"]
+        #d["file"] = e.filename.decode('utf-8')
+        d["flag"] = e.flag
+        d["file"] = filename
+        d["syscall"] = "write"
+        d["pid"] = e.pid 
+        #d["dir1"] = e.dir1.decode('utf-8')
+        #d["dir2"] = e.dir2.decode('utf-8')
+        #d["dir3"] = e.dir3.decode('utf-8')
+        #d["dir4"] = e.dir4.decode('utf-8')
+        #d["inode"] = e.i_ino 
+        d["inode"] = 0
+        d["cmd"] = e.cmd.decode('utf-8')
+        d["ptrace"] = make_process_tree(e.ppid)
+        #tmp = {"pid": e.ppid, "cmd": e.pcmd.decode('utf-8')}
+        #d["ptrace"].append(tmp)
+        print(d)
+        #aops_zeus = conf_data["Repository"]["aops_zeus"]
+        #response = requests.post(aops_zeus, json=d, timeout=5)
+        #if response.status_code != 200:
+        #    print('POST request failed:', response.status_code)
+        t = threading.Thread(target=postdata, args=(d,))
+        t.deamon = True
+        t.start()
+
+#load ebpf
+b = BPF(text=bpf_text, cflags=["-Wno-macro-redefined"])
+#exec_map = b["exec_map"]
+exec_map = b.get_table("exec_map")
+
+if __name__ == "__main__":
+
+    #print(json.dumps(conf_data, indent = 4))
+    aops_zeus = conf_data["Repository"]["aops_zeus"]
+    conf_list = conf_data["Repository"]["conf_list"]
+    host_id = conf_data["Repository"]["host_id"]
+    domain_name = conf_data["Repository"]["domain_name"]
+
+    b["events"].open_perf_buffer(process_event)
+    while True:
+        b.perf_buffer_poll()
