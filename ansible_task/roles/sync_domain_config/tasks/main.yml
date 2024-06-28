@@ -1,0 +1,13 @@
+---
+- name: install dependency
+  dnf:
+    name: python3-libselinux
+    state: present
+- name: sync config to host
+  copy:
+    src: "{{ item.key }}"
+    dest: "{{ item.value }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_dict: "{{ file_path_infos }}"
