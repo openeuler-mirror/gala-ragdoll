@@ -16,3 +16,6 @@
 @Author: JiaoSiMao
 Description:
 """
+from ragdoll.database.table import Domain, DomainHost, DomainConfInfo, HostConfSyncStatus
+
+__all__ = ["Domain", "DomainHost", "DomainConfInfo", "HostConfSyncStatus"]
