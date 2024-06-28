@@ -11,11 +11,16 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-@FileName: __init__.py.py
-@Time: 2024/5/24 11:09
+@FileName: host_conf_sync_status.py
+@Time: 2024/6/14 15:52
 @Author: JiaoSiMao
 Description:
 """
-from ragdoll.database.table import Domain, DomainHost, DomainConfInfo, HostConfSyncStatus
+from marshmallow import Schema, fields
 
-__all__ = ["Domain", "DomainHost", "DomainConfInfo", "HostConfSyncStatus"]
+
+class GetHostConfSyncStatusSchema(Schema):
+    """
+    validators for parameter of /conftrace/host/sync/status/get
+    """
+    domainName = fields.String(required=True, validate=lambda s: len(s) > 0)
