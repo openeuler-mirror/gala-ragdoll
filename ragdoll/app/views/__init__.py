@@ -16,4 +16,36 @@
 @Author: JiaoSiMao
 Description:
 """
+from .domain import (
+    CreateDomain,
+    DeleteDomain,
+    QueryDomain
+)
+from .domain_confs import (
+    AddManagementConfsInDomain,
+    UploadManagementConfsInDomain,
+    DeleteManagementConfsInDomain,
+    GetManagementConfsInDomain,
+    QueryChangelogOfManagementConfsInDomain
+)
+from .domain_host import (
+    AddHostInDomain,
+    DeleteHostInDomain,
+    GetHostByDomainName
+)
+from .host_conf_sync_status import GetHostConfSyncStatus
 
+__all__ = (
+    "CreateDomain",
+    "DeleteDomain",
+    "QueryDomain",
+    "AddHostInDomain",
+    "DeleteHostInDomain",
+    "GetHostByDomainName",
+    "AddManagementConfsInDomain",
+    "UploadManagementConfsInDomain",
+    "DeleteManagementConfsInDomain",
+    "GetManagementConfsInDomain",
+    "QueryChangelogOfManagementConfsInDomain",
+    "GetHostConfSyncStatus"
+)
