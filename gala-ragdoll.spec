@@ -46,6 +46,8 @@ install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
 install service/ragdoll %{buildroot}/%{_prefix}/bin/
+install service/ragdoll-filetrace %{buildroot}/%{_prefix}/bin/
+install service/ragdoll-filetrace.service %{buildroot}/%{_prefix}/lib/systemd/system
 
 
 %pre 
@@ -68,8 +70,11 @@ fi
 %license LICENSE
 /%{_sysconfdir}/ragdoll/gala-ragdoll.conf
 %{_bindir}/ragdoll
+%{_bindir}/ragdoll-filetrace
 %{_prefix}/lib/systemd/system/gala-ragdoll.service
+%{_prefix}/lib/systemd/system/ragdoll-filetrace.service
 %{_prefix}/bin/ragdoll
+%{_prefix}/bin/ragdoll-filetrace
 
 
 %files -n python3-gala-ragdoll
@@ -79,6 +84,9 @@ fi
 
 
 %changelog
+* Thu June 27 2024 zhangdaolong<zhangdaolong@isoftstone.com> - v1.4.0-4
+- Added real-time monitoring file function
+
 * Mon Apr 17 2023 wenxin<shusheng.wen@outlook.com> - v1.3.0-3
 - update the host id validate method for ragdoll
 
