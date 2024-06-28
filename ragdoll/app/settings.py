@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -10,9 +10,8 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-@FileName: __init__.py.py
-@Time: 2024/5/24 16:17
-@Author: JiaoSiMao
-Description:
-"""
+from vulcanus.conf import ConfigHandle
+
+# read manager configuration
+config_obj = ConfigHandle("ragdoll", None)
+configuration = config_obj.parser
