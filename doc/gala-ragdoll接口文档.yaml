@@ -1,0 +1,1157 @@
+swagger: "2.0"
+info:
+  version: v1
+  title: ragdoll
+  description: Configuration traceability
+schemes:
+  - https
+host: localhost.com
+basePath: /conftrace
+tags:
+  - name: conftrace
+paths:
+  /conftrace/domain/createDomain:
+    post:
+      tags:
+        - conftrace
+      summary: 创建业务域
+      description: 创建业务域
+      operationId: add_domain
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: domain_info
+          description: 业务域信息
+          required: true
+          schema:
+            $ref: "#/definitions/Domain"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "create domain successfully"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+        "400":
+          description: "the specified domainName is invalid"
+        "500":
+          description: "domain already exists"
+  /conftrace/domain/queryDomain:
+    post:
+      tags:
+        - conftrace
+      summary: 查询业务域
+      description: 查询业务域
+      operationId: get_domains
+      parameters:
+        - in: body
+          name: query_domain_info
+          description: 查询的业务域信息
+          required: false
+          schema:
+            $ref: "#/definitions/QueryDomainInfo"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: ''
+          schema:
+            $ref: "#/definitions/DomainGetRsp"
+  /conftrace/domain/deleteDomain:
+    delete:
+      tags:
+        - conftrace
+      summary: 删除业务域
+      description: 删除业务域
+      operationId: delete_domain
+      parameters:
+        - in: body
+          name: delete_domain_info
+          description: 删除的业务域信息
+          required: true
+          schema:
+            $ref: '#/definitions/DomainDelReq'
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "delete domain successfully"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /conftrace/host/addHost:
+    post:
+      tags:
+        - conftrace
+      summary: 添加业务域主机
+      description: 添加业务域主机
+      operationId: add_domain_hosts
+      parameters:
+        - in: body
+          name: domain_host_info
+          description: 添加的业务域主机信息
+          required: true
+          schema:
+            $ref: "#/definitions/HostInfos"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "add host successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /conftrace/host/getHost:
+    post:
+      tags:
+        - conftrace
+      summary: 获取业务域主机
+      description: 获取业务域主机
+      operationId: get_domain_host_by_domain
+      parameters:
+        - in: body
+          name: domain_name
+          description: 业务域名称
+          required: true
+          schema:
+            $ref: "#/definitions/DomainName"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "get host successfully in domain"
+          schema:
+            $ref: "#/definitions/DomainHostRep"
+  /conftrace/host/deleteHost:
+    delete:
+      tags:
+        - conftrace
+      summary: 删除业务域主机
+      description: 删除业务域主机
+      operationId: delete_domain_host
+      parameters:
+        - in: body
+          name: domain_host_info
+          description: 业务域主机信息
+          required: true
+          schema:
+            $ref: "#/definitions/DomainHostDeleteReq"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "delete host successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /conftrace/management/addManagementConf:
+    post:
+      tags:
+        - conftrace
+      summary: 添加业务域基线配置
+      description: 添加业务域基线配置
+      operationId: add_domain_conf
+      parameters:
+        - in: body
+          name: domain_conf
+          description: 业务域基线配置信息
+          required: true
+          schema:
+            $ref: "#/definitions/Confs"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "add management configuration items successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /conftrace/management/uploadManagementConf:
+    post:
+      tags:
+        - conftrcae
+      summary: 上传添加业务域基线配置
+      description: 上传添加业务域基线配置
+      operationId: UploadManagementConfsInDomain
+      parameters:
+        - in: formData
+          name: file
+          required: false
+          type: file
+        - in: formData
+          name: filePath
+          required: false
+          type: string
+        - in: formData
+          name: domainName
+          required: false
+          type: string
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "upload management configuration items successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /conftrace/management/getManagementConf:
+    post:
+      tags:
+        - conftrace
+      summary: 获取业务域基线配置
+      description: 获取业务域基线配置
+      operationId: get_domain_confs_by_domain
+      parameters:
+        - in: body
+          name: domain_name
+          description: 业务域名称
+          required: true
+          schema:
+            $ref: "#/definitions/DomainName"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "get management configuration items successfully in domain"
+          schema:
+            $ref: "#/definitions/DomainConfRep"
+  /conftrace/management/queryManageConfChange:
+    post:
+      tags:
+        - conftrace
+      summary: 查询配置历史变更记录
+      description: 查询配置历史变更记录
+      operationId: QueryChangelogOfManagementConfsInDomain
+      parameters:
+        - in: body
+          name: manage_conf_change
+          description: 业务域配置名称信息
+          required: true
+          schema:
+            $ref: "#/definitions/ManageConfs"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "query the changelog of management configuration items successfully\
+            \ in domain"
+          schema:
+            $ref: "#/definitions/DomainConfChangeInfoRep"
+  /conftrace/management/deleteManagementConf:
+    delete:
+      tags:
+        - conftrace
+      summary: 删除业务域基线配置
+      description: 删除业务域基线配置
+      operationId: delete_domain_confs
+      parameters:
+        - in: body
+          name: delete_domain_conf
+          description: 删除的业务域配置信息
+          required: true
+          schema:
+            $ref: "#/definitions/ManageConfs"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "delete management configuration items successfully in domain"
+          schema:
+            $ref: "#/definitions/BaseResponse"
+  /contrace/confs/queryRealConfs:
+    post:
+      tags:
+        - conftrace
+      summary: 查询真实配置内容
+      description: 查询真实配置内容
+      operationId: "query_real_confs"
+      parameters:
+        - in: body
+          name: domain_host
+          required: false
+          schema:
+            $ref: "#/definitions/ConfHost"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "query total modules successfully"
+          schema:
+            items:
+              $ref: "#/definitions/RealConfInfoRep"
+  /conftrace/confs/querySupportedConfs:
+    post:
+      tags:
+        - conftrace
+      summary: 查询支持的配置
+      description: 查询支持的配置
+      operationId: QuerySupportedConfs
+      parameters:
+        - in: body
+          name: domain_name
+          description: 业务域名称
+          required: true
+          schema:
+            $ref: "#/definitions/DomainName"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "query supported configuration list successfully"
+          schema:
+            items:
+              $ref: "#/definitions/SupportedConf"
+  /conftrace/confs/queryExpectedConfs:
+    post:
+      tags:
+        - conftrace
+      summary: 查询业务域expected配置
+      description: 查询业务域expected配置
+      operationId: QueryExceptedConfs
+      parameters:
+        - in: body
+          name: domain_name
+          required: true
+          schema:
+            $ref: "#/definitions/DomainNames"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "query expected configuration value successfully"
+          schema:
+            items:
+              $ref: "#/definitions/ExceptedConfInfoRep"
+        "404":
+          description: "path does not exist"
+  /conftrace/confs/syncConf:
+    put:
+      tags:
+        - conftrace
+      summary: 同步配置
+      description: 同步配置
+      operationId: SyncConfToHostFromDomain
+      parameters:
+        - in: "body"
+          name: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/SyncReq"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "synchronize the configuration items successfully"
+          schema:
+            items:
+              $ref: "#/definitions/HostSyncResultRep"
+  /conftrace/confs/batch/syncConf:
+    put:
+      tags:
+        - conftrace
+      summary: 批量同步配置
+      description: 批量同步配置
+      operationId: BatchSyncConfToHostFromDomain
+      parameters:
+        - in: body
+          name: batch_sync_req
+          required: true
+          schema:
+            $ref: "#/definitions/BatchSyncReq"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "synchronize the configuration items successfully"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/HostSyncResultRep"
+  /conftrace/confs/domain/diff:
+    post:
+      tags:
+        - conftrace
+      summary: 业务域配置对比
+      description: 业务域配置对比
+      operationId: CompareConfDiff
+      parameters:
+        - in: body
+          name: compare_conf_diff
+          required: true
+          schema:
+            $ref: "#/definitions/CompareConfDiff"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "compare domain conf different successfully"
+          schema:
+            items:
+              $ref: "#/definitions/DomainConfigSyncResultRep"
+  /conftrace/confs/getDomainStatus:
+    post:
+      tags:
+        - conftrace
+      summary: 获取业务域主机同步状态
+      description: 获取业务域主机同步状态
+      operationId: GetTheSyncStatusOfDomain
+      parameters:
+        - in: body
+          name: domain_ip
+          required: true
+          schema:
+            $ref: "#/definitions/DomainIp"
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "get the status of the domain successfully"
+          schema:
+            $ref: "#/definitions/SyncStatusRep"
+  /conftrace/host/sync/status/get:
+    post:
+      tags:
+        - conftrace
+      summary: 获取主机同步状态
+      description: 获取主机同步状态
+      operationId: GetHostConfSyncStatus
+      parameters:
+        - in: body
+          name: domainName
+          required: true
+          type: string
+        - in: header
+          name: access_token
+          description: 授权码
+          type: string
+      responses:
+        "200":
+          description: "get the status of the domain successfully"
+          schema:
+            $ref: "#/definitions/HostSyncStatusRep"
+
+definitions:
+  Domain:
+    type: object
+    properties:
+      domainName:
+        type: string
+        description: "业务域名称"
+      priority:
+        type: integer
+        description: "优先级"
+      clusterId:
+        type: string
+        description: "集群id"
+    example:
+      domainName: "domainName"
+      priority: 0
+      clusterId: "efc1b4ab4cce4c449e3b9c978bc9dc76"
+  QueryDomainInfo:
+    type: object
+    properties:
+      cluster_list:
+        type: array
+        description: "集群id列表"
+      sort:
+        type: string
+        description: "排序字段"
+      direction:
+        type: string
+        description: "升序或降序"
+      page:
+        type: integer
+        description: "页码"
+      per_page:
+        type: integer
+        description: "每页条数"
+    example:
+      cluster_list: [ "efc1b4ab4cce4c449e3b9c978bc9dc76" ],
+      sort: "domain_id",
+      direction: "desc",
+      page: 1,
+      per_page: 1
+  DomainName:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+  DomainNames:
+    type: "object"
+    properties:
+      domainNames:
+        type: "array"
+        items:
+          $ref: "#/definitions/DomainName"
+  DomainIp:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      ip:
+        type: "string"
+        description: "ip"
+  HostInfos:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      hostInfos:
+        type: "array"
+        items:
+          $ref: "#/definitions/Host"
+  Host:
+    type: "object"
+    required:
+      - "hostId"
+    properties:
+      hostId:
+        type: "integer"
+        description: "the id of host"
+      ip:
+        type: "string"
+        description: "the ipv4 address of host"
+      ipv6:
+        type: "string"
+        description: "the ipv6 address of host"
+    example:
+      ipv6: "ipv6"
+      ip: "ip"
+      hostId: "hostId"
+  ManageConfs:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+      confFiles:
+        type: "array"
+        items:
+          $ref: "#/definitions/ManageConf"
+  ManageConf:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "the path of a configuration file"
+  ConfFiles:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+      confFiles:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfFile"
+    example:
+      confFiles:
+        - contents: "contents"
+          filePath: "filePath"
+        - contents: "contents"
+          filePath: "filePath"
+      domainName: "domainName"
+  ConfFile:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "the path of a configuration file"
+      contents:
+        type: "string"
+        description: "the contents of the configuration file"
+    example:
+      contents: "contents"
+      filePath: "filePath"
+  Confs:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+      confFiles:
+        type: "array"
+        items:
+          $ref: "#/definitions/Conf"
+  Conf:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "the path of a configuration file"
+      contents:
+        type: "string"
+        description: "the contents of the configuration file"
+      hostId:
+        type: "integer"
+        description: "the id of host"
+  ConfHost:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      hostIds:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            hostId:
+              type: "integer"
+              description: "the id of host"
+  RealConfInfo:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+      hostID:
+        type: "integer"
+      confBaseInfos:
+        type: "array"
+        items:
+          $ref: "#/definitions/RealconfBaseInfo"
+    example:
+      domainName: "domainName"
+      hostID: "hostID"
+      confBaseInfos:
+        - rpmName: "rpmName"
+          path: "path"
+          filePath: "filePath"
+          spacer: "spacer"
+          rpmVersion: "rpmVersion"
+          rpmRelease: "rpmRelease"
+          fileOwner: "fileOwner"
+          confType: "key-value"
+          confContents: "confContents"
+          fileAttr: "fileAttr"
+  RealconfBaseInfo:
+    type: "object"
+    properties:
+      path:
+        type: "string"
+        description: "The currently configured xpath path"
+      filePath:
+        type: "string"
+        description: "The real file path of the configuration item in OS"
+      fileAttr:
+        type: "string"
+        description: "the attributes for the real file of the configuration item in\
+          \ OS"
+      fileOwner:
+        type: "string"
+        description: "the owner information for the real file of the configuration\
+          \ item in OS"
+      confContents:
+        type: "string"
+        description: "the specific content of the configuration item"
+    example:
+      path: "path"
+      filePath: "filePath"
+      fileOwner: "fileOwner"
+      confContents: "confContents"
+      fileAttr: "fileAttr"
+  ExceptedConfInfo:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+      confBaseInfos:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfBaseInfo"
+    example:
+      domainName: "domainName"
+      confBaseInfos:
+        - expectedContents: "expectedContents"
+          filePath: "filePath"
+          changeLog:
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+        - expectedContents: "expectedContents"
+          filePath: "filePath"
+          changeLog:
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+            - date: "2000-01-23T04:56:07.000+00:00"
+              preValue: "preValue"
+              changeReason: "changeReason"
+              author: "author"
+              postValue: "postValue"
+              changeId: "changeId"
+  ConfBaseInfo:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "the path of a configuration file"
+      expectedContents:
+        type: "string"
+        description: "expected configuration value of configuration item"
+      changeLog:
+        type: "array"
+        items:
+          $ref: "#/definitions/GitLogMessage"
+    example:
+      expectedContents: "expectedContents"
+      filePath: "filePath"
+      changeLog:
+        - date: "2000-01-23T04:56:07.000+00:00"
+          preValue: "preValue"
+          changeReason: "changeReason"
+          author: "author"
+          postValue: "postValue"
+          changeId: "changeId"
+        - date: "2000-01-23T04:56:07.000+00:00"
+          preValue: "preValue"
+          changeReason: "changeReason"
+          author: "author"
+          postValue: "postValue"
+          changeId: "changeId"
+  GitLogMessage:
+    type: "object"
+    properties:
+      date:
+        type: "string"
+        format: "date-time"
+      author:
+        type: "string"
+      changeId:
+        type: "string"
+      changeReason:
+        type: "string"
+      preValue:
+        type: "string"
+      postValue:
+        type: "string"
+    example:
+      date: "2000-01-23T04:56:07.000+00:00"
+      preValue: "preValue"
+      changeReason: "changeReason"
+      author: "author"
+      postValue: "postValue"
+      changeId: "changeId"
+  BaseResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        description: 状态码
+      message:
+        type: "string"
+        description: 描述信息
+      label:
+        type: "string"
+        description: 状态码对应的含义
+  SyncStatus:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      hostStatus:
+        type: "array"
+        items:
+          $ref: "#/definitions/HostSyncStatus"
+    example:
+      hostStatus:
+        - hostId: "hostId"
+          syncStatus:
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+        - hostId: "hostId"
+          syncStatus:
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+            - isSynced: "NOT FOUND"
+              filePath: "filePath"
+      domainName: "domainName"
+  HostSyncStatus:
+    type: "object"
+    properties:
+      hostId:
+        type: "integer"
+        description: "the id of host"
+      syncStatus:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfIsSynced"
+    example:
+      hostId: "hostId"
+      syncStatus:
+        - isSynced: "NOT FOUND"
+          filePath: "filePath"
+        - isSynced: "NOT FOUND"
+          filePath: "filePath"
+  ConfIsSynced:
+    type: "object"
+    properties:
+      file_path:
+        type: "string"
+      isSynced:
+        type: "string"
+        enum:
+          - "NOT FOUND"
+          - "NOT SYNCHRONIZE"
+          - "SYNCHRONIZED"
+      singleConf:
+        type: "object"
+        items:
+          $ref: "#/definitions/SingleConf"
+  SingleHostSyncResult:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "the conf path"
+      result:
+        type: "string"
+        description: "the conf sync result"
+  HostSyncResult:
+    type: "object"
+    properties:
+      host_id:
+        type: "integer"
+        description: "the id of host"
+      syncResult:
+        type: "array"
+        description: "the result of host"
+        items:
+          $ref: "#/definitions/SingleHostSyncResult"
+  DomainConfigSyncResult:
+    type: "object"
+    properties:
+      host_id:
+        type: "integer"
+        description: "the id of host"
+      domain_name:
+        type: "string"
+        description: "the domainName of host"
+      sync_status:
+        type: "integer"
+        description: "the syncStatus of host"
+  CollectInfo:
+    type: "object"
+    properties:
+      infos:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfInfo"
+  ConfInfo:
+    type: "object"
+    properties:
+      host_id:
+        type: "string"
+      config_list:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfPath"
+  ConfPath:
+    type: string
+  SyncInfo:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      msg:
+        type: "string"
+      status:
+        type: "boolean"
+  SupportedConf:
+    type: "string"
+  SyncHostConfs:
+    type: "object"
+    properties:
+      hostId:
+        type: "integer"
+        description: "the id of host"
+      syncConfigs:
+        type: "array"
+        items:
+          type: "string"
+  CompareConfDiff:
+    type: "object"
+    properties:
+      expectedConfsResp:
+        type: "array"
+        items:
+          $ref: "#/definitions/DomainConfBaseInfos"
+      domainResult:
+        type: object
+        description: "domain real config"
+  DomainConfBaseInfos:
+    type: "object"
+    properties:
+      confBaseInfos:
+        type: array
+        items:
+          $ref: "#/definitions/ConfBase"
+      domainName:
+        type: "string"
+        description: "domain name"
+  ConfBase:
+    type: "object"
+    properties:
+      filePath:
+        type: "string"
+        description: "file path"
+      expectedContents:
+        type: "string"
+        description: "expected contents"
+  SyncReq:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      syncList:
+        type: "array"
+        items:
+          $ref: "#/definitions/SyncHostConfs"
+  BatchSyncReq:
+    type: "object"
+    properties:
+      domainName:
+        type: "string"
+        description: "domain name"
+      hostIds:
+        type: "array"
+        items:
+          type: "integer"
+  SingleConf:
+    type: object
+    properties:
+      singleFilePath:
+        type: "string"
+        description: "single file path"
+      singleIsSynced:
+        type: "string"
+        enum:
+          - "NOT FOUND"
+          - "NOT SYNCHRONIZE"
+          - "SYNCHRONIZED"
+  SingleDelHost:
+    type: object
+    properties:
+      hostId:
+        type: string
+        description: 主机id
+  DomainDelReq:
+    type: object
+    properties:
+      domainId:
+        type: string
+        description: "业务域id"
+      domainName:
+        type: string
+        description: "业务域名称"
+  DomainHostDeleteReq:
+    type: object
+    properties:
+      domainName:
+        type: string
+        description: "业务域名称"
+      hostInfos:
+        type: array
+        items:
+          $ref: "#/definitions/SingleDelHost"
+  DomainData:
+    type: object
+    properties:
+      cluster_id:
+        type: string
+        description: "集群id"
+      cluster_name:
+        type: string
+        description: "集群名称"
+      domain_id:
+        type: string
+        description: "业务域id"
+      domain_name:
+        type: string
+        description: "业务域名称"
+      priority:
+        type: integer
+        description: "优先级"
+  SingleDomainConf:
+    type: object
+    properties:
+      filePath:
+        type: string
+        description: 配置路径名称
+      contents:
+        type: string
+        description: 配置内容
+  HostConfSyncStatus:
+    type: object
+    properties:
+      host_id:
+        type: string
+        description: 主机id
+      host_ip:
+        type: string
+        description: 主机ip
+      sync_status:
+        type: integer
+        description: 同步状态
+  DomainGetRsp:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              domain_infos:
+                type: array
+                items:
+                  $ref: '#/definitions/DomainData'
+              total_count:
+                type: integer
+                description: 总数
+              total_page:
+                type: integer
+                description: 总页数
+  DomainHostRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              hostId:
+                type: string
+                description: 主机id
+              ip:
+                type: string
+                description: 主机ip
+              ipv6:
+                type: string
+                description: 协议
+  DomainConfRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              domainName:
+                type: string
+                description: 业务域名称
+              confFiles:
+                type: array
+                items:
+                  $ref: '#/definitions/SingleDomainConf'
+  DomainConfChangeInfoRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/ExceptedConfInfo'
+  RealConfInfoRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/RealConfInfo'
+  ExceptedConfInfoRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/ExceptedConfInfo'
+  HostSyncResultRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/HostSyncResult'
+  DomainConfigSyncResultRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/DomainConfigSyncResult'
+  SyncStatusRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/SyncStatus'
+  HostSyncStatusRep:
+    allOf:
+      - $ref: '#/definitions/BaseResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            items:
+              $ref: '#/definitions/HostConfSyncStatus'
