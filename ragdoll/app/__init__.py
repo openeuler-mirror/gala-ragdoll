@@ -16,3 +16,14 @@
 @Author: JiaoSiMao
 Description:
 """
+from ragdoll.app.settings import configuration
+from ragdoll.app.utils.git_tools import GitTools
+
+from vulcanus.cache import RedisCacheManage
+from vulcanus.database.proxy import RedisProxy
+
+if RedisProxy.redis_connect is None:
+    RedisProxy()
+
+cache = RedisCacheManage(domain=configuration.domain, redis_client=RedisProxy.redis_connect)
+TARGETDIR = GitTools().target_dir
