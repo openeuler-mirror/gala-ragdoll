@@ -1,0 +1,18 @@
+git:
+  git_dir: "/home/confTraceTest"
+  user_name: "user_name"
+  user_email: "user_email"
+uwsgi:
+  daemonize: "/var/log/aops/uwsgi/ragdoll.log"
+  http-timeout: 600
+  harakiri: 600
+  processes: 1
+  gevent: 100
+  port: 11114
+serial:
+  serial_count: 10
+log:
+  log_level: "INFO"
+  log_dir: "/var/log/aops"
+  max_bytes: 31457280
+  backup_count: 40

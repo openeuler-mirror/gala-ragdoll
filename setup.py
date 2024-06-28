@@ -1,33 +1,28 @@
-# coding: utf-8
+#!/usr/bin/python3
+"""
+Description: setup up the A-ops manager service.
+"""
 
 from setuptools import setup, find_packages
 
-NAME = "ragdoll"
-VERSION = "1.0.0"
-
-# To install the library, run the following
-#
-# python setup.py install
-#
-# prerequisite: setuptools
-# http://pypi.python.org/pypi/setuptools
-
-REQUIRES = ["connexion"]
-
 setup(
-    name=NAME,
-    version=VERSION,
-    description="Configuration traceability",
-    author_email="",
-    url="",
-    keywords=["Swagger", "Configuration traceability"],
-    install_requires=REQUIRES,
+    name='ragdoll',
+    version='1.0.0',
     packages=find_packages(),
-    package_data={'': ['swagger/swagger.yaml']},
-    include_package_data=True,
-    entry_points={
-        'console_scripts': ['ragdoll=ragdoll.__main__:main']},
-    long_description="""\
-    A
-    """
+    install_requires=[
+        'libyang',
+        'Flask',
+        'Flask-RESTful',
+        'requests',
+        'SQLAlchemy',
+        "redis",
+        'gevent',
+    ],
+    data_files=[
+        ('/etc/aops/conf.d', ['ragdoll.yml']),
+        ('/etc/aops', ['ragdoll_crontab.yml']),
+        ('/usr/lib/systemd/system', ["gala-ragdoll.service"]),
+        ("/opt/aops/database", ["ragdoll/database/gala-ragdoll.sql"]),
+    ],
+    zip_safe=False,
 )

@@ -1,5 +1,5 @@
 Name:		gala-ragdoll
-Version:	v1.4.0
+Version:	v2.0.0
 Release:	1
 Summary:	Configuration traceability
 License:	MulanPSL2
@@ -7,20 +7,20 @@ URL:		https://gitee.com/openeuler/%{name}
 Source0:	%{name}-%{version}.tar.gz
 %global debug_package %{nil}
 
-BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
+BuildRequires:  python3-setuptools python3-werkzeug python3-libyang
 BuildRequires:	git python3-devel systemd python3-concurrent-log-handler
 
-Requires:   python3-gala-ragdoll = %{version}-%{release} python3-concurrent-log-handler
+Requires:   aops-vulcanus >= v2.0.0
+Requires:   python3-gala-ragdoll = %{version}-%{release} python3-concurrent-log-handler ansible
+Provides:   gala-ragdoll
 
 %description
 An os-level configuration management service
 
-
-
 %package -n python3-gala-ragdoll
 Summary: python3 pakcage of gala-ragdoll
 Requires: python3-flask-testing python3-libyang git
-Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
+Requires: python3-werkzeug python3-swagger-ui-bundle
 
 %description -n python3-gala-ragdoll
 python3 pakcage of gala-ragdoll
@@ -30,44 +30,32 @@ python3 pakcage of gala-ragdoll
 %autosetup -n %{name}-%{version}
 
 
-%build
 #build for gala-ragdoll
 %py3_build
 
 
-%install
 #install for gala-ragdoll
 %py3_install
 install yang_modules/*.yang %{buildroot}/%{python3_sitelib}/yang_modules/
-mkdir -p %{buildroot}/%{_sysconfdir}/ragdoll
-install config/*.conf %{buildroot}/%{_sysconfdir}/ragdoll/
-mkdir %{buildroot}/%{python3_sitelib}/ragdoll/config
-install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
-mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
-install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
+mkdir -p %{buildroot}/opt/aops/database/
+cp ragdoll/database/*.sql %{buildroot}/opt/aops/database/
+cp -r ansible_task %{buildroot}/opt/aops/
+mkdir -p %{buildroot}/etc/aops/conf.d
+install ragdoll.yml %{buildroot}/etc/aops/conf.d
+install ragdoll_crontab.yml %{buildroot}/etc/aops/
 
 
-%pre 
-if [ -f "%{systemd_dir}/gala-ragdoll.service" ] ; then
-        systemctl enable gala-ragdoll.service || :
-fi
-
-%post  
-%systemd_post gala-ragdoll.service
-
-%preun 
-%systemd_preun gala-ragdoll.service
-
-%postun 
-%systemd_postun gala-ragdoll.service
-
-
-%files 
+%files
 %doc doc/*
 %license LICENSE
-/%{_sysconfdir}/ragdoll/gala-ragdoll.conf
-%{_bindir}/ragdoll
-%{_prefix}/lib/systemd/system/gala-ragdoll.service
+%attr(0644,root,root) %{_sysconfdir}/aops/conf.d/ragdoll.yml
+%attr(0755,root,root) %{_unitdir}/gala-ragdoll.service
+%attr(0755, root, root) /opt/aops/ansible_task/*
+%attr(0644,root,root) %{_sysconfdir}/aops/ragdoll_crontab.yml
+%attr(0755, root, root) /opt/aops/database/*
+%{python3_sitelib}/ragdoll-*.egg-info/*
+%{python3_sitelib}/ragdoll/*
+
 
 
 %files -n python3-gala-ragdoll
@@ -77,6 +65,10 @@ fi
 
 
 %changelog
+* Tue May 28 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-1
+- support signature verification
+- unified management and control of the configuration center
+
 * Mon Apr 17 2023 wenxin<shusheng.wen@outlook.com> - v1.3.0-3
 - update the host id validate method for ragdoll
 
