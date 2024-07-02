@@ -15,7 +15,6 @@ import time
 from typing import List
 
 from redis import Redis, RedisError
-from vulcanus.conf.constant import TaskStatus
 from vulcanus.exceptions.database_exception import DatabaseConnectionFailed
 from vulcanus.log.log import LOGGER
 from ragdoll.app.proxy.conf_trace import ConfTraceProxy
@@ -75,6 +74,4 @@ class TaskCallbackSubscribe:
         if not channel_func or not callable(channel_func):
             LOGGER.error("Unsupported task type")
             return
-
-        if task_execute_result.get("status") == TaskStatus.SUCCEED:
-            channel_func(task_execute_result)
+        channel_func(task_execute_result)
