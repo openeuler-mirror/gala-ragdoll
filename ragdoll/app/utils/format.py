@@ -435,27 +435,27 @@ class Format(object):
     @staticmethod
     def check_domain_param(domain):
         code_num = 200
-        base_resp = None
+        message = "Failed to verify the input parameter, please check the input parameters."
         check_res = Format.domainCheck(domain)
         if not check_res:
-            num = 400
-            base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
-            return base_rsp, num
+            code_num = 400
+            message = "Failed to verify the input parameter, please check the input parameters."
+            return code_num, message
 
         # check the domain is existed
         is_exist = Format.isDomainExist(domain)
         if not is_exist:
             code_num = 404
-            base_rsp = BaseResponse(code_num, "The current domain does not exist, please create the domain first.")
-            return base_rsp, code_num
+            message = "The current domain does not exist, please create the domain first."
+            return code_num, message
 
         # get the existed result of the host in domain
         is_host_list_exist = Format.isHostInDomain(domain)
         if not is_host_list_exist:
             code_num = 404
-            base_resp = BaseResponse(code_num, "The host information is not set in the current domain." +
-                                     "Please add the host information first")
-        return base_resp, code_num
+            message = "The host information is not set in the current domain. Please add the host information first"
+
+        return code_num, message
 
     @staticmethod
     def get_hostid_list_by_domain(domain):

@@ -49,9 +49,9 @@ class GetTheSyncStatusOfDomain(BaseResponse):
         domain = params.get("domainName")
         ip = params.get("ip")
         # check domain
-        base_rsp, code_num = Format.check_domain_param(domain)
+        code_num, message = Format.check_domain_param(domain)
         if code_num != 200:
-            return base_rsp, code_num
+            return self.response(code=code_num, message=message)
 
         host_id = Format.get_host_id_by_ip(ip, domain)
         # get manage confs in domain
@@ -381,20 +381,22 @@ class BatchSyncConfToHostFromDomain(BaseResponse):
         domain = params.get("domainName")
         host_ids = params.get("hostIds")
         # check domain
-        base_rsp, code_num = Format.check_domain_param(domain)
+        code_num, message = Format.check_domain_param(domain)
         if code_num != 200:
-            return base_rsp, code_num
+            return self.response(code=code_num, message=message)
 
         # 根据domain和ip获取有哪些不同步的文件
         # get manage confs in domain
         base_resp, code_num, manage_confs = Format.get_domain_conf(domain)
-        if code_num != 200:
-            return base_rsp, code_num
+        if not manage_confs:
+            return self.response(code=SUCCEED, message="no conf need sync")
 
         # get real conf in host
         real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, host_ids)
         # compare manage conf with real conf
         sync_status = Format.diff_manageconf_with_realconf(domain, real_conf_res_text, manage_confs)
+        if not sync_status["hostStatus"]:
+            return self.response(code=SUCCEED, message="no conf need to sync")
         # 解析sync_status，取出未同步的数据
         host_sync_confs = dict()
         host_status = sync_status["hostStatus"]
@@ -465,7 +467,7 @@ class BatchSyncConfToHostFromDomain(BaseResponse):
                     file_path_infos[file_path] = contents
 
         if not file_path_infos:
-            code_num = PARAM_ERROR
+            code_num = SUCCEED
             code_string = "No config needs to be synchronized"
             return self.response(code=code_num, message=code_string)
         code_num, code_string, sync_res = Format.deal_batch_sync_res(exist_host, file_path_infos)
