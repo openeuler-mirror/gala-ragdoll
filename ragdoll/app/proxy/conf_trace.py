@@ -16,10 +16,15 @@
 @Author: JiaoSiMao
 Description:
 """
+import ast
+import json
+import os
+
 import sqlalchemy
 
+from ragdoll.app import TARGETDIR
 from vulcanus import LOGGER
-from vulcanus.restful.resp.state import SUCCEED, DATABASE_DELETE_ERROR
+from vulcanus.restful.resp.state import SUCCEED, DATABASE_DELETE_ERROR, NO_DATA, UNKNOWN_ERROR
 
 from ragdoll.database import Domain, DomainHost, DomainConfInfo, HostConfSyncStatus
 from vulcanus.database.proxy import MysqlProxy
@@ -70,3 +75,57 @@ class ConfTraceProxy(MysqlProxy):
             LOGGER.error("delete cluster %s info fail", cluster_id)
             self.session.rollback()
             return DATABASE_DELETE_ERROR
+
+    def host_cancel(self, host_ids: list):
+        """
+        Delete host info in table and file
+
+        Args:
+            host_ids: host ids
+
+        Returns:
+            str
+        """
+        try:
+            for host_id in host_ids:
+                # 查询host_id属于哪个domain
+                domain_host_query = (
+                    self.session.query(
+                        DomainHost.host_id,
+                        DomainHost.domain_id,
+                        Domain.domain_name
+                    )
+                    .outerjoin(Domain, Domain.domain_id == DomainHost.domain_id)
+                    .filter(DomainHost.host_id == host_id)
+                ).first()
+                domain_name = domain_host_query.domain_name
+                if not domain_name:
+                    return NO_DATA
+                # 删除/home/confTraceTest下的数据
+                domainPath = os.path.join(TARGETDIR, domain_name)
+                hostPath = os.path.join(domainPath, "hostRecord.txt")
+                if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
+                    return NO_DATA
+                with open(hostPath, 'r') as d_file:
+                    lines = d_file.readlines()
+                    with open(hostPath, 'w') as w_file:
+                        for line in lines:
+                            line_host_id = json.loads(str(ast.literal_eval(line)).replace("'", "\""))['host_id']
+                            if host_id != line_host_id:
+                                w_file.write(line)
+
+            # 删除domain_host host_conf_sync_status
+            self.session.query(DomainHost).filter(DomainHost.host_id.in_(host_ids)).delete(
+                synchronize_session=False)
+            self.session.query(HostConfSyncStatus).filter(HostConfSyncStatus.host_id.in_(host_ids)).delete(
+                synchronize_session=False)
+            self.session.commit()
+            return SUCCEED
+        except sqlalchemy.exc.SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("delete hosts %s info fail", str(host_ids))
+            self.session.rollback()
+            return DATABASE_DELETE_ERROR
+        except OSError as err:
+            LOGGER.error("OS error: {0}".format(err))
+            return UNKNOWN_ERROR

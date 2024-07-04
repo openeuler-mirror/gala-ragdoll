@@ -62,6 +62,17 @@ class TaskCallbackSubscribe:
         except DatabaseConnectionFailed:
             LOGGER.error(f"Failed to delete cluster: {task_execute_result.get('cluster_id')} relative info.")
 
+    def _host_delete_task(self, host_ids: list) -> None:
+        lock = f"host_delete_task_ragdoll_subscribe-{str(host_ids)}"
+        if not self._subscribe.set(lock, 'locked', nx=True, ex=30):
+            LOGGER.warning("Another host cancel task is running, skip this subscribe.")
+            return
+        try:
+            with ConfTraceProxy() as proxy:
+                proxy.host_cancel(host_ids)
+        except DatabaseConnectionFailed:
+            LOGGER.error(f"Failed to cancel hosts : {str(host_ids)} relative info.")
+
     def _callback(self, channel: str, task_execute_result: dict) -> None:
         """
         Handles callback based on the task channel and task execution result.
