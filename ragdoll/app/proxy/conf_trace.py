@@ -87,21 +87,24 @@ class ConfTraceProxy(MysqlProxy):
             str
         """
         try:
-            for host_id in host_ids:
-                # 查询host_id属于哪个domain
-                domain_host_query = (
-                    self.session.query(
-                        DomainHost.host_id,
-                        DomainHost.domain_id,
-                        Domain.domain_name
-                    )
-                    .outerjoin(Domain, Domain.domain_id == DomainHost.domain_id)
-                    .filter(DomainHost.host_id == host_id)
-                ).first()
-                domain_name = domain_host_query.domain_name
-                if not domain_name:
-                    return NO_DATA
-                # 删除/home/confTraceTest下的数据
+            domain_names = dict()
+            # 查询host_id属于哪个domain
+            domain_host_query = (
+                self.session.query(
+                    DomainHost.host_id,
+                    DomainHost.domain_id,
+                    Domain.domain_name
+                )
+                .outerjoin(Domain, Domain.domain_id == DomainHost.domain_id)
+                .filter(DomainHost.host_id.in_(host_ids))
+            ).all()
+            if len(domain_host_query) == 0:
+                return NO_DATA
+            for row in domain_host_query:
+                domain_names[row.host_id] = row.domain_name
+
+            # 删除/home/confTraceTest下的数据
+            for host_id, domain_name in domain_names.items():
                 domainPath = os.path.join(TARGETDIR, domain_name)
                 hostPath = os.path.join(domainPath, "hostRecord.txt")
                 if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):

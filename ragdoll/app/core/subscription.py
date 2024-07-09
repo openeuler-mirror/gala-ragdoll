@@ -50,6 +50,9 @@ class TaskCallbackSubscribe:
             except RedisError as error:
                 LOGGER.error(f"Failed to subscribe to channels {self._channels}: {error}")
                 time.sleep(1)
+            except Exception as error:
+                LOGGER.error(f"Unknown error occurred: {error}")
+                time.sleep(2)
 
     def _cluster_synchronize_cancel_task(self, task_execute_result: dict) -> None:
         lock = f"cluster_synchronize_cancel_task_ragdoll_subscribe-{task_execute_result['cluster_id']}"
