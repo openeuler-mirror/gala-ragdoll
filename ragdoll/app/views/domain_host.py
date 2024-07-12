@@ -276,11 +276,9 @@ class GetHostByDomainName(BaseResponse):
         # 从数据库中读取数据
         codeNum, hostlist = callback.get_domain_host_by_domain(domain)
         # Joining together the returned codeNum codeMessage
-        if len(hostlist) == 0:
+        if codeNum != SUCCEED:
             return self.response(code=codeNum, message="Some unknown problems.")
-        else:
-            LOGGER.debug("hostlist is : {}".format(hostlist))
-            return self.response(code=codeNum, message="Get host info in the domain successfully", data=hostlist)
+        return self.response(code=codeNum, message="Get host info in the domain successfully", data=hostlist)
 
 
 class GetNonexistentDomainHost(BaseResponse):
