@@ -102,7 +102,7 @@ def main():
     register_service()
     _thread.start_new_thread(
         TaskCallbackSubscribe(subscribe_client=RedisProxy.redis_connect,
-                              channels=["cluster_synchronize_cancel_task"])
+                              channels=["cluster_synchronize_cancel_task", "host_delete_task"])
     )
     return _app
 

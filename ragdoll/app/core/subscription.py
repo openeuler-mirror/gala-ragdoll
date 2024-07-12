@@ -50,6 +50,9 @@ class TaskCallbackSubscribe:
             except RedisError as error:
                 LOGGER.error(f"Failed to subscribe to channels {self._channels}: {error}")
                 time.sleep(1)
+            except Exception as error:
+                LOGGER.error(f"Unknown error occurred: {error}")
+                time.sleep(2)
 
     def _cluster_synchronize_cancel_task(self, task_execute_result: dict) -> None:
         lock = f"cluster_synchronize_cancel_task_ragdoll_subscribe-{task_execute_result['cluster_id']}"
@@ -61,6 +64,17 @@ class TaskCallbackSubscribe:
                 proxy.cancel_synchronize_cluster(task_execute_result.get("cluster_id"))
         except DatabaseConnectionFailed:
             LOGGER.error(f"Failed to delete cluster: {task_execute_result.get('cluster_id')} relative info.")
+
+    def _host_delete_task(self, host_ids: list) -> None:
+        lock = f"host_delete_task_ragdoll_subscribe-{str(host_ids)}"
+        if not self._subscribe.set(lock, 'locked', nx=True, ex=30):
+            LOGGER.warning("Another host cancel task is running, skip this subscribe.")
+            return
+        try:
+            with ConfTraceProxy() as proxy:
+                proxy.host_cancel(host_ids)
+        except DatabaseConnectionFailed:
+            LOGGER.error(f"Failed to cancel hosts : {str(host_ids)} relative info.")
 
     def _callback(self, channel: str, task_execute_result: dict) -> None:
         """
