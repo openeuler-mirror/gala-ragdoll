@@ -349,7 +349,7 @@ paths:
         "404":
           description: "path does not exist"
   /conftrace/confs/syncConf:
-    put:
+    post:
       tags:
         - conftrace
       summary: 同步配置
@@ -372,7 +372,7 @@ paths:
             items:
               $ref: "#/definitions/HostSyncResultRep"
   /conftrace/confs/batch/syncConf:
-    put:
+    post:
       tags:
         - conftrace
       summary: 批量同步配置
