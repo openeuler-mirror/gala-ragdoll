@@ -208,7 +208,7 @@ class QueryRealConfs(BaseResponse):
 
 class SyncConfToHostFromDomain(BaseResponse):
     @BaseResponse.handle(schema=SyncConfToHostFromDomainSchema, token=True)
-    def put(self, **params):
+    def post(self, **params):
         """
             synchronize the configuration information of the configuration domain to the host # noqa: E501
 
@@ -369,7 +369,7 @@ class CompareConfDiff(BaseResponse):
 
 class BatchSyncConfToHostFromDomain(BaseResponse):
     @BaseResponse.handle(schema=BatchSyncConfToHostFromDomainSchema, token=True)
-    def put(self, **params):
+    def post(self, **params):
         """
             synchronize the configuration information of the configuration domain to the host # noqa: E501
 
