@@ -19,6 +19,7 @@ Description:
 from __future__ import absolute_import
 import importlib
 import json
+import unittest
 
 from ragdoll.config_model.text_config import TextConfig
 from ragdoll.test import BaseTestCase
@@ -86,6 +87,4 @@ class TestTextConfig(BaseTestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-
     unittest.main()
