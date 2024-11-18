@@ -9,6 +9,7 @@ uwsgi:
   processes: 1
   gevent: 100
   port: 11114
+  buffer_size: 32768
 serial:
   serial_count: 10
 log:
