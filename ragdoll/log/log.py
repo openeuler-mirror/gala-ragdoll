@@ -80,7 +80,7 @@ class Logger:
 
         Args:
             arg(int): parameter need to be checked.
-            comment(str): decription.
+            comment(str): description.
 
         Raises:
             ValueError

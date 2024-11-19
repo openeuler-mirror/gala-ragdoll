@@ -14,22 +14,22 @@ def parse_commands():
     ragdoll_cli = argparse.ArgumentParser(prog="ragdoll_cli")
     sub_parser = ragdoll_cli.add_subparsers(dest="sub_parser", title="ragdoll_cli")
 
-    # 1 ragdoll > domian
+    # 1 ragdoll > domain
     domain = sub_parser.add_parser("domain", help="Configuring Domain Management.")
-    domain = domain.add_subparsers(dest="sub_sub_parser", title="domian")
+    domain = domain.add_subparsers(dest="sub_sub_parser", title="domain")
     
-    # ragdoll > domian > create
+    # ragdoll > domain > create
     domain_create = domain.add_parser("create", help="create configuring domain")
     domain_create.add_argument("--domainName", dest="domain_name", type=str, action="append", required=True, help="domain name")
     domain_create.add_argument("--priority", dest="priority", type=int, action="append", required=True, help="domain priority")
     domain_create.set_defaults(func=domain_manage.domain_create)
     
-    # ragdoll > domian > delete
+    # ragdoll > domain > delete
     domain_delete = domain.add_parser("delete", help="delete configuring domain")
     domain_delete.add_argument("--domainName", dest="domain_name", type=str, action="append", required=True, help="domain name")
     domain_delete.set_defaults(func=domain_manage.domain_delete)
     
-    # ragdoll > domian > query
+    # ragdoll > domain > query
     domain_query = domain.add_parser("query", help="query configuring domain")
     domain_query.set_defaults(func=domain_manage.domain_query)
 

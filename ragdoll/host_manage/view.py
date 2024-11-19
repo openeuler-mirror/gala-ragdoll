@@ -106,7 +106,7 @@ class AddHostInDomain(BaseResponse):
             codeNum = PARTIAL_SUCCEED
             codeString = Format.splicErrorString("host", "add hosts", successHost, failedHost)
 
-        # git commit maessage
+        # git commit message
         if len(host_infos) > 0:
             git_tools = GitTools()
             commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +

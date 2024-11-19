@@ -18,12 +18,12 @@ An os-level configuration management service
 
 
 %package -n python3-gala-ragdoll
-Summary: python3 pakcage of gala-ragdoll
+Summary: python3 package of gala-ragdoll
 Requires: python3-flask-testing python3-libyang git
 Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 
 %description -n python3-gala-ragdoll
-python3 pakcage of gala-ragdoll
+python3 package of gala-ragdoll
 
 
 %prep
@@ -147,7 +147,7 @@ fi
 - 2. delete redundant dependent packages for gala-spider.
 
 * Mon Aug 1 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.0-2
-- add base-database executable file into aops-manager to downlaod database.
+- add base-database executable file into aops-manager to download database.
 
 * Sun Jul 31 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.0-1
 - modify spec for gala-gopher&gala-spider and add new features.
