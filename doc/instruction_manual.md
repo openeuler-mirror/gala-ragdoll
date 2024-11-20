@@ -253,7 +253,7 @@ port = 11114
   ```
   {
     "code": 200,
-    "msg": "delete the conf in ll domian, the path including : /etc/yum.repos.d/openEuler.repo                  \"
+    "msg": "delete the conf in ll domain, the path including : /etc/yum.repos.d/openEuler.repo                  \"
   }
   ```
 

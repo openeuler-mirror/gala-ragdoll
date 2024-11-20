@@ -452,7 +452,7 @@ class Format(object):
             base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
             return base_rsp, num
 
-        # check the domian is exist
+        # check the domain is exist
         is_exist = Format.isDomainExist(domain)
         if not is_exist:
             code_num = 404

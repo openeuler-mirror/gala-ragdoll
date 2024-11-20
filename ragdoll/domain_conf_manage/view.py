@@ -227,7 +227,7 @@ class AddManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Add the conf in {} domain, ".format(domain) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage
@@ -340,7 +340,7 @@ class UploadManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domainName) +
+            commit_code = git_tools.gitCommit("Add the conf in {} domain, ".format(domainName) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage
@@ -438,7 +438,7 @@ class DeleteManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("delete the conf in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("delete the conf in {} domain, ".format(domain) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage
