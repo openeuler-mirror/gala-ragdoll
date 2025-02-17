@@ -127,6 +127,9 @@ class AddHostInDomain(BaseResponse):
             result = callback.add_domain_hosts(domain, filtered_host_infos)
             if result != SUCCEED:
                 LOGGER.error(f"add domain host {filtered_host_infos} error")
+
+        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
+        Format.install_update_agith(domain, successHost)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -250,6 +253,9 @@ class DeleteHostInDomain(BaseResponse):
             result = callback.delete_domain_host(domain, filtered_host_infos)
             if result != SUCCEED:
                 LOGGER.error(f"delete domain host {filtered_host_infos} error")
+
+        # # 根据containedInHost 停止agith服务，删除agith，删除redis key值
+        Format.uninstall_hosts_agith(containedInHost, domain)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -264,21 +270,13 @@ class GetHostByDomainName(BaseResponse):
             :type body: dict | bytes
 
             :rtype: List[Host]
-            """
-        domain = params.get("domainName")
-        # check the input domain
-        checkRes = Format.domainCheck(domain)
-        if not checkRes:
-            codeNum = PARAM_ERROR
-            return self.response(code=codeNum,
-                                 message="Failed to verify the input parameter, please check the input parameters.")
-
+        """
         # 从数据库中读取数据
-        codeNum, hostlist = callback.get_domain_host_by_domain(domain)
+        codeNum, result = callback.get_domain_host_by_domain(params)
         # Joining together the returned codeNum codeMessage
         if codeNum != SUCCEED:
             return self.response(code=codeNum, message="Some unknown problems.")
-        return self.response(code=codeNum, message="Get host info in the domain successfully", data=hostlist)
+        return self.response(code=codeNum, message="Get host info in the domain successfully", data=result)
 
 
 class GetNonexistentDomainHost(BaseResponse):

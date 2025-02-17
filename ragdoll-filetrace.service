@@ -1,0 +1,19 @@
+[Unit]
+Description=ragdoll-filetrace Service
+After=network.target
+StartLimitIntervalSec=30
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/test -z "$(pgrep -f /usr/bin/ragdoll-filetrace)"
+ExecStart=/usr/bin/python3 /usr/bin/ragdoll-filetrace
+ExecStop=/bin/bash -c 'kill `pgrep -d " "  -f ragdoll-filetrace>/dev/null`'
+Restart=on-failure
+RestartSec=5s
+StartLimitBurst=3
+
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+

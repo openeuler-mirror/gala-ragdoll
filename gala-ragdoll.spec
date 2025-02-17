@@ -1,6 +1,6 @@
 Name:		gala-ragdoll
 Version:	v2.0.0
-Release:	1
+Release:	2
 Summary:	Configuration traceability
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/%{name}
@@ -41,8 +41,6 @@ mkdir -p %{buildroot}/opt/aops/database/
 cp ragdoll/database/*.sql %{buildroot}/opt/aops/database/
 cp -r ansible_task %{buildroot}/opt/aops/
 mkdir -p %{buildroot}/etc/aops/conf.d
-install ragdoll.yml %{buildroot}/etc/aops/conf.d
-install ragdoll_crontab.yml %{buildroot}/etc/aops/
 
 
 %files
@@ -55,6 +53,9 @@ install ragdoll_crontab.yml %{buildroot}/etc/aops/
 %attr(0755, root, root) /opt/aops/database/*
 %{python3_sitelib}/ragdoll-*.egg-info/*
 %{python3_sitelib}/ragdoll/*
+%{_bindir}/ragdoll-filetrace
+%{_prefix}/lib/systemd/system/ragdoll-filetrace.service
+%{_prefix}/bin/ragdoll-filetrace
 
 
 
@@ -65,6 +66,9 @@ install ragdoll_crontab.yml %{buildroot}/etc/aops/
 
 
 %changelog
+* Wed Dec 11 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-2
+- Added real-time monitoring file function
+
 * Tue May 28 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-1
 - support signature verification
 - unified management and control of the configuration center

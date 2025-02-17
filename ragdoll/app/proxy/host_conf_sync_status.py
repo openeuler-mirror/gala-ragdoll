@@ -74,13 +74,13 @@ class HostConfSyncStatusProxy(MysqlProxy):
             self.session.rollback()
             return DATABASE_INSERT_ERROR
 
-    def delete_host_sync_status(self, domain_name: str, hostInfos: list):
+    def delete_host_sync_status(self, domain_id: str, hostIds: list):
         """
             Delete host sync status from table
 
             Args:
-                domain_name: test
-                hostInfos: parameter, e.g.
+                domain_id: xxxxx
+                hostIds: parameter, e.g.
                 [
                     {
                         "host_id":"xxx",
@@ -91,19 +91,14 @@ class HostConfSyncStatusProxy(MysqlProxy):
                 str
         """
         try:
-            domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
-            delete_host_sync_status_list = []
-            for hostInfo in hostInfos:
-                delete_host_sync_status_list.append(hostInfo["host_id"])
             host_status_to_delete = self.session.query(HostConfSyncStatus).filter(
-                HostConfSyncStatus.domain_id == domain_info.domain_id).filter(
-                HostConfSyncStatus.host_id.in_(delete_host_sync_status_list))
+                HostConfSyncStatus.domain_id == domain_id).filter(
+                HostConfSyncStatus.host_id.in_(hostIds))
             host_status_to_delete.delete(synchronize_session=False)
             self.session.commit()
             return SUCCEED
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.error(error)
-            LOGGER.error("delete domain %s fail", hostInfos)
             return DATABASE_DELETE_ERROR
 
     def get_domain_host_sync_status(self, domain_name: str):

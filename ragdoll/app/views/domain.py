@@ -89,6 +89,10 @@ class CreateDomain(BaseResponse):
             result = callback.add_domain(domain_info)
             if result != SUCCEED:
                 LOGGER.error(f"add domain {tempDomainName} error")
+
+        # 对successDomain成功的domain添加文件监控开关、告警开关
+        Format.add_domain_conf_trace_flag(params, successDomain, tempDomainName)
+
         return self.response(code=codeNum, message=codeString)
 
 
@@ -110,7 +114,11 @@ class DeleteDomain(BaseResponse):
         if not domainName:
             codeString = "The entered domain is empty"
             return self.response(code=PARAM_ERROR, message=codeString)
-
+        # 1.清理agith
+        # 获取domain下的host ids
+        host_ids = Format.get_hostid_list_by_domain(domainName)
+        if len(host_ids) > 0:
+            Format.uninstall_trace(host_ids, domainName)
         successDomain = []
         failedDomain = []
 
@@ -134,6 +142,9 @@ class DeleteDomain(BaseResponse):
             result = callback.delete_domain(params.get("domainId"))
             if result != SUCCEED:
                 LOGGER.error(f"delete domain {domainName} error")
+
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        Format.clear_all_domain_data(domainName, successDomain, host_ids, params.get("domainId"))
         return self.response(code=codeNum, message=codeString)
 
 

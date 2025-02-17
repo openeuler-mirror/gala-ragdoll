@@ -22,6 +22,7 @@ from typing import Dict
 from urllib.parse import urlencode
 from ragdoll.app import configuration
 from ragdoll.app.constant import DIRECTORY_FILE_PATH_LIST
+from ragdoll.app.proxy.domain import DomainProxy
 from ragdoll.app.proxy.host_conf_sync_status import HostConfSyncStatusProxy
 
 from vulcanus.database.helper import make_mysql_engine_url, create_database_engine
@@ -171,8 +172,8 @@ class UpdateConfigSyncStatusTask(TimedTask):
         engine_url = make_mysql_engine_url(configuration)
         MysqlProxy.engine = create_database_engine(
             engine_url,
-            configuration.mysql.get("POOL_SIZE"),
-            configuration.mysql.get("POOL_RECYCLE"),
+            configuration.mysql.pool_size,
+            configuration.mysql.pool_recycle,
         )
 
     @staticmethod
@@ -198,16 +199,15 @@ class UpdateConfigSyncStatusTask(TimedTask):
         from vulcanus.restful.response import BaseResponse
         from vulcanus import sign_data, load_private_key
         host_infos_result = {}
-        domain_host_proxy = DomainHostProxy()
-        domain_host_proxy.connect()
-        domain_ids = []
-        for domain_info in domain_infos:
-            domain_id = domain_info["domain_id"]
-            domain_ids.append(domain_id)
-        code_num, hostlist = domain_host_proxy.get_domain_host_by_domain_id_list(domain_ids)
-        if code_num != SUCCEED or not hostlist:
-            LOGGER.warning("No valid host information was found.")
-            return host_infos_result
+        with DomainHostProxy() as domainHostCallBack:
+            domain_ids = []
+            for domain_info in domain_infos:
+                domain_id = domain_info["domain_id"]
+                domain_ids.append(domain_id)
+            code_num, hostlist = domainHostCallBack.get_domain_host_by_domain_id_list(domain_ids)
+            if code_num != SUCCEED or not hostlist:
+                LOGGER.warning("No valid host information was found.")
+                return host_infos_result
         # 根据host_id获取host的信息
         host_ids = []
         for host in hostlist:
@@ -267,6 +267,10 @@ class UpdateConfigSyncStatusTask(TimedTask):
                 LOGGER.info(
                     "update %s host sync status  basic info succeed", update_result
                 )
+                # domain的主机更新成功同步状态后，更新domain同步状态
+                with DomainProxy() as domainCallBack:
+                    domainCallBack.update_domain_sync_status(domain_diff_resp)
+
         else:
             LOGGER.info("no host sync status data need to update")
             return
@@ -280,20 +284,17 @@ class UpdateConfigSyncStatusTask(TimedTask):
     def execute(self):
         with self.app_context():
             from ragdoll.app import cache
-            from ragdoll.app.proxy.domain import DomainProxy
             from ragdoll.app.utils.format import Format
             # 获取当前集群的id
             cluster_id = cache.location_cluster["cluster_id"]
             print(f"cluster_id is {cluster_id}")
             # 根据当前集群id获取domain
-            domain_proxy = DomainProxy()
-            domain_proxy.connect()
-            # cluster_id = result["cluster_id"]
-            domain_page_filter = {"cluster_list": [cluster_id]}
-            code_num, domain_list_resp = domain_proxy.get_domains_by_cluster(domain_page_filter)
-            if code_num != SUCCEED or not domain_list_resp["domain_infos"]:
-                LOGGER.error("There is no domain with the associated cluster id")
-                return
+            with DomainProxy() as domainCallBack:
+                domain_page_filter = {"cluster_list": [cluster_id]}
+                code_num, domain_list_resp = domainCallBack.get_domains_by_cluster(domain_page_filter)
+                if code_num != SUCCEED or not domain_list_resp["domain_infos"]:
+                    LOGGER.error("There is no domain with the associated cluster id")
+                    return
 
             # 根据domain获取所有的基线配置
             domain_infos = domain_list_resp["domain_infos"]
@@ -309,11 +310,10 @@ class UpdateConfigSyncStatusTask(TimedTask):
                 LOGGER.error("There is no domain expected files")
                 return
             # 根据domain获取所有的id，从host_conf_sync_status表中读取
-            host_sync_proxy = HostConfSyncStatusProxy()
-            host_sync_proxy.connect()
-            domain_host_id_dict = self.get_domain_host_ids(
-                request_domain_host_id, host_sync_proxy
-            )
+            with HostConfSyncStatusProxy() as hostConfSyncStatusCallBack:
+                domain_host_id_dict = self.get_domain_host_ids(
+                    request_domain_host_id, hostConfSyncStatusCallBack
+                )
             if not domain_host_id_dict:
                 LOGGER.info("no host sync status data need to update")
                 return
@@ -342,4 +342,4 @@ class UpdateConfigSyncStatusTask(TimedTask):
             # 调用ragdoll接口进行对比
             domain_diff_resp = self.compare_conf(all_domain_expected_files, domain_result)
             # 根据结果更新数据库
-            self.update_sync_status_for_db(domain_diff_resp, host_sync_proxy)
+            self.update_sync_status_for_db(domain_diff_resp, hostConfSyncStatusCallBack)

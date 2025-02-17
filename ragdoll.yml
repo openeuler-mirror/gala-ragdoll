@@ -17,3 +17,9 @@ log:
   log_dir: "/var/log/aops"
   max_bytes: 31457280
   backup_count: 40
+alarm:
+  url: "https://restapi.sms.glb.cmos:20080/sms/smsMessage"
+  rspId: "36493"
+  billId: "15838552560"
+  userName: "ZYZX-DXDY-YPT-PZSYGJ"
+  apiKey: "e02eba549d8d9fb3a490a4c632255c6a"

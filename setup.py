@@ -23,6 +23,8 @@ setup(
         ('/etc/aops', ['ragdoll_crontab.yml']),
         ('/usr/lib/systemd/system', ["gala-ragdoll.service"]),
         ("/opt/aops/database", ["ragdoll/database/gala-ragdoll.sql"]),
+        ("/usr/bin", ["ragdoll-filetrace"]),
+        ("/usr/lib/systemd/system", ["ragdoll-filetrace.service"]),
     ],
     zip_safe=False,
 )

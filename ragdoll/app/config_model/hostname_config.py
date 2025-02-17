@@ -58,6 +58,9 @@ class HostnameConfig(BaseHandlerConfig):
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
+        if not dst_conf_dict or not src_conf_dict:
+            res = NOT_SYNCHRONIZE
+            return res
         if dst_conf_dict[0] != src_conf_dict[0]:
             res = NOT_SYNCHRONIZE
 

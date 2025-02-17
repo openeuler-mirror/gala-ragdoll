@@ -16,9 +16,13 @@
 @Author: JiaoSiMao
 Description:
 """
+import math
 
 import sqlalchemy
-from ragdoll.database import Domain, DomainHost
+from sqlalchemy import func
+from vulcanus.database.helper import sort_and_page
+
+from ragdoll.database import Domain, DomainHost, HostConfSyncStatus
 
 from vulcanus import LOGGER
 from vulcanus.database.proxy import MysqlProxy
@@ -112,28 +116,71 @@ class DomainHostProxy(MysqlProxy):
             LOGGER.error("delete domain %s fail", hostInfos)
             return DATABASE_DELETE_ERROR
 
-    def get_domain_host_by_domain(self, domain_name: str):
+    def get_domain_host_by_domain(self, params: dict):
         """
-            get domain host from table
+           get domain host from table
 
-            Args:
-                domain_name: test
-            Returns:
-                list
+        params:
+            host_ip (str): 127.0.0.1
+            domain_name (str): test
         """
+        result = {"total_count": 0, "total_page": 0, "hostlist": []}
         hostlist = []
         try:
-            domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
-            domain_host_infos = self.session.query(DomainHost).filter(
-                DomainHost.domain_id == domain_info.domain_id).all()
-            for domain_host in domain_host_infos:
-                host = {"hostId": domain_host.host_id, "ip": domain_host.host_ip, "ipv6": domain_host.ipv6}
+            domain_name = params.get("domainName")
+            host_ip = params.get("hostIp")
+            sync_status = params.get("sync_status")
+            filters = set()
+            if not domain_name:
+                # 如果没有传入domain_name 那就查询所有domain_name下的数据
+                all_domains = self.session.query(Domain).all()
+                domain_ids = {domain.domain_id for domain in all_domains}
+                filters.add(DomainHost.domain_id.in_(domain_ids))
+            else:
+                domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+                filters.add(DomainHost.domain_id == domain_info.domain_id)
+            if host_ip:
+                filters.add(func.lower(DomainHost.host_ip).like(func.lower(f'%{host_ip}%')))
+            if sync_status is not None:
+                filters.add(HostConfSyncStatus.sync_status == sync_status)
+            domain_host_query = (
+                self.session.query(
+                    DomainHost.domain_id,
+                    DomainHost.host_id,
+                    DomainHost.host_ip,
+                    DomainHost.ipv6,
+                    HostConfSyncStatus.sync_status,
+                    Domain.domain_name
+                )
+                .outerjoin(HostConfSyncStatus, HostConfSyncStatus.host_id == DomainHost.host_id)
+                .outerjoin(Domain, Domain.domain_id == HostConfSyncStatus.domain_id)
+                .filter(*filters)
+            )
+
+            result["total_count"] = domain_host_query.count()
+            if not result["total_count"]:
+                return SUCCEED, result
+            domain_host_query.group_by("domain_id")
+
+            processed_domains_query, result["total_page"] = sort_and_page(
+                domain_host_query,
+                "host_id",
+                "desc",
+                params["per_page"],
+                params["page"],
+            )
+            for domain_info in processed_domains_query.all():
+                host = {"domain_name": domain_info.domain_name, "hostId": domain_info.host_id,
+                        "ip": domain_info.host_ip,
+                        "ipv6": domain_info.ipv6,
+                        "sync_status": domain_info.sync_status}
                 hostlist.append(host)
-            return SUCCEED, hostlist
+            result['hostlist'] = hostlist
+            return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.error(error)
             LOGGER.error("query domain host fail")
-            return DATABASE_QUERY_ERROR, hostlist
+            return DATABASE_QUERY_ERROR, result
 
     def get_domain_host_by_domain_id_list(self, domain_ids: list):
         """
@@ -156,3 +203,14 @@ class DomainHostProxy(MysqlProxy):
             LOGGER.error(error)
             LOGGER.error("query domain host fail")
             return DATABASE_QUERY_ERROR, hostlist
+
+    def get_domain_host_by_host_id(self, host_id: str):
+        try:
+            domain_host_info = self.session.query(DomainHost).filter(
+                DomainHost.host_id == host_id).first()
+
+            return SUCCEED, domain_host_info
+        except sqlalchemy.exc.SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("query domain host fail")
+            return DATABASE_QUERY_ERROR, None

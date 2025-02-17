@@ -255,6 +255,11 @@ class AddManagementConfsInDomain(BaseResponse):
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
 
+        # 根据agith_success_conf 更新agith的配置
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domain)
+        if len(conf_files_list) > 0:
+            Format.update_agith(conf_files_list, domain)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -378,6 +383,10 @@ class UploadManagementConfsInDomain(BaseResponse):
             if result != SUCCEED:
                 LOGGER.error("add domain conf error")
 
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domainName)
+        if len(conf_files_list) > 0:
+            Format.update_agith(conf_files_list, domainName)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -482,6 +491,10 @@ class DeleteManagementConfsInDomain(BaseResponse):
             result = callback.delete_domain_confs(domain, filtered_domain_files)
             if result != SUCCEED:
                 LOGGER.error(f"delete domain info {filtered_domain_files} error")
+
+        # 获取domain最新的有哪些配置 [1]
+        conf_files_list = Format.get_conf_files_list(domain)
+        Format.update_agith(conf_files_list, domain)
         return self.response(code=codeNum, message=codeString)
 
 
