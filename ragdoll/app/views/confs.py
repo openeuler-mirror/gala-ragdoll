@@ -23,7 +23,7 @@ from ragdoll.app.constant import NOT_SYNCHRONIZE
 from ragdoll.app.constant import yang_conf_list
 from ragdoll.app.serialize.confs import GetSyncStatusSchema, QueryExceptedConfsSchema, QueryRealConfsSchema, \
     SyncConfToHostFromDomainSchema, QuerySupportedConfsSchema, CompareConfDiffSchema, \
-    BatchSyncConfToHostFromDomainSchema
+    BatchSyncConfToHostFromDomainSchema, AiBatchSyncConfToHostFromDomainSchema
 from ragdoll.app.utils.conf_tools import ConfTools
 from ragdoll.app.utils.format import Format
 from ragdoll.app.utils.host_tools import HostTools
@@ -475,3 +475,116 @@ class BatchSyncConfToHostFromDomain(BaseResponse):
         if code_num != 200:
             return self.response(code=SERVER_ERROR, message=code_string, data=sync_res)
         return self.response(code=SUCCEED, message=code_string, data=sync_res)
+
+
+class AiBatchSyncConfToHostFromDomain(BaseResponse):
+    @BaseResponse.handle(schema=AiBatchSyncConfToHostFromDomainSchema, token=True)
+    def post(self, **params):
+        """
+        Synchronize the configuration information of all configuration domains to the host.
+
+        :param body:
+        :type body: dict | bytes
+
+        :rtype: List[HostSyncResult]
+        """
+        aiReqParams = params.get("aiReqParams")
+        if not aiReqParams:
+            return self.response(code=PARAM_ERROR, message="No domains host need to sync")
+        # 用于存储所有域的同步结果
+        all_sync_results = []
+        for reqParam in aiReqParams:
+            domain = reqParam.get("domainName")
+            # 检查域
+            code_num, message = Format.check_domain_param(domain)
+            if code_num != 200:
+                all_sync_results.append({"domain": domain, "status": "failed", "message": message})
+                continue
+
+            # 获取域中的管理配置
+            base_resp, code_num, manage_confs = Format.get_domain_conf(domain)
+            if not manage_confs:
+                all_sync_results.append({"domain": domain, "status": "success", "message": "no conf need sync"})
+                continue
+
+            # 获取域中的主机信息
+            hostIds = reqParam.get("hostIds")
+            if len(hostIds) == 0:
+                all_sync_results.append({"domain": domain, "status": "failed", "message": "No hosts in domain."})
+                continue
+
+            # 获取主机的实际配置
+            real_conf_res_text = Format.get_realconf_by_domain_and_host(domain, hostIds)
+
+            # 比较管理配置和实际配置
+            sync_status = Format.diff_manageconf_with_realconf(domain, real_conf_res_text, manage_confs)
+            if not sync_status["hostStatus"]:
+                all_sync_results.append({"domain": domain, "status": "success", "message": "no conf need to sync"})
+                continue
+
+            # 解析sync_status，取出未同步的数据
+            host_sync_confs = dict()
+            host_status = sync_status["hostStatus"]
+            for host_result in host_status:
+                host_id = host_result["hostId"]
+                sync_status = host_result["syncStatus"]
+                sync_configs = []
+                for sync_result in sync_status:
+                    if sync_result["isSynced"] == NOT_SYNCHRONIZE:
+                        sync_configs.append(sync_result["file_path"])
+                host_sync_confs[host_id] = sync_configs
+
+            # 检查域是否存在
+            is_exist = Format.isDomainExist(domain)
+            if not is_exist:
+                all_sync_results.append({"domain": domain, "status": "failed", "message": "Domain does not exist."})
+                continue
+
+            # 检查主机是否在管理主机列表中
+            exist_host = []
+            if len(host_sync_confs) > 0:
+                host_ids = host_sync_confs.keys()
+                for host_id in host_ids:
+                    for hostId in hostIds:
+                        if host_id == hostId:
+                            exist_host.append(host_id)
+            else:
+                for host_id in hostIds:
+                    tmp_host = {"hostId": host_id}
+                    exist_host.append(tmp_host)
+
+            if len(exist_host) == 0:
+                all_sync_results.append({"domain": domain, "status": "failed", "message": "No hosts in domain."})
+                continue
+
+            # 获取域中的管理配置
+            man_conf_res_text = Format.get_manageconf_by_domain(domain)
+            manage_confs = man_conf_res_text.get("conf_files")
+
+            # 组装入参
+            file_path_infos = dict()
+            for host_id in exist_host:
+                sync_confs = host_sync_confs.get(host_id)
+                for d_man_conf in manage_confs:
+                    file_path = d_man_conf.get("file_path").split(":")[-1]
+                    if file_path in sync_confs:
+                        contents = d_man_conf.get("contents")
+                        file_path_infos[file_path] = contents
+
+            if not file_path_infos:
+                all_sync_results.append(
+                    {"domain": domain, "status": "success", "message": "No config needs to be synchronized"})
+                continue
+
+            # 处理批量同步
+            code_num, code_string, sync_res = Format.deal_batch_sync_res(exist_host, file_path_infos)
+
+            if code_num != 200:
+                all_sync_results.append(
+                    {"domain": domain, "status": "failed", "message": code_string, "data": sync_res})
+            else:
+                all_sync_results.append(
+                    {"domain": domain, "status": "success", "message": code_string, "data": sync_res})
+
+        # 返回所有域的同步结果
+        return self.response(code=SUCCEED, message="Sync completed for all domains.", data=all_sync_results)
