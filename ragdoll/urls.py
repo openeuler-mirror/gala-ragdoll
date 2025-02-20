@@ -17,7 +17,7 @@ from ragdoll.app.views.confs import (
     SyncConfToHostFromDomain,
     QuerySupportedConfs,
     CompareConfDiff,
-    BatchSyncConfToHostFromDomain
+    BatchSyncConfToHostFromDomain, AiBatchSyncConfToHostFromDomain
 )
 from ragdoll.app.views.conftrace_manage import ConfTraceData, ConfTraceQuery, ConfChangeRecordQuery
 from ragdoll.app.views.domain import (
@@ -63,6 +63,7 @@ URLS = [
     (QuerySupportedConfs, constant.QUERY_SUPPORTED_CONFS),
     (CompareConfDiff, constant.COMPARE_CONF_DIFF),
     (BatchSyncConfToHostFromDomain, constant.BATCH_SYNC_CONF_TO_HOST_FROM_DOMAIN),
+    (AiBatchSyncConfToHostFromDomain, constant.AI_BATCH_SYNC_CONF_TO_HOST_FROM_DOMAIN),
     (GetHostConfSyncStatus, constant.HOST_CONF_SYNC_STATUS),
     (ConfTraceData, constant.CONF_TRACE_DATA),
     (ConfTraceQuery, constant.CONF_TRACE_QUERY),

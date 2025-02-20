@@ -80,3 +80,13 @@ class BatchSyncConfToHostFromDomainSchema(Schema):
     domainName = fields.String(required=True, validate=lambda s: len(s) > 0)
     hostIds = fields.List(fields.String(required=True, validate=lambda s: len(s) > 0), required=True,
                           validate=lambda s: len(s) > 0)
+
+
+class SingleAiBatchSyncReqSchema(Schema):
+    domainName = fields.String(required=True, validate=lambda s: len(s) > 0)
+    hostIds = fields.List(fields.String(required=True, validate=lambda s: len(s) > 0), required=True,
+                          validate=lambda s: len(s) > 0)
+
+
+class AiBatchSyncConfToHostFromDomainSchema(Schema):
+    aiReqParams = fields.List(fields.Nested(SingleAiBatchSyncReqSchema()), required=True)
