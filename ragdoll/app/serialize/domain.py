@@ -28,6 +28,8 @@ class CreateDomainSchema(Schema):
     domainName = fields.String(required=True, validate=lambda s: len(s) > 0)
     clusterId = fields.String(required=True, validate=lambda s: len(s) > 0)
     priority = fields.Integer(required=True, validate=lambda s: s >= 0)
+    conf_change_flag = fields.Boolean(required=True, default=False, validate=validate.OneOf([True, False]))
+    report_flag = fields.Boolean(required=True, default=False, validate=validate.OneOf([True, False]))
 
 
 class DeleteDomainSchema(Schema):
@@ -56,4 +58,5 @@ class GetDomainsPage_ResponseSchema(Schema):
             "domain_name",
             "cluster_id",
             "priority",
+            "sync_status"
         )

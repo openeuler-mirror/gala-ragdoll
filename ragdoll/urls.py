@@ -19,6 +19,7 @@ from ragdoll.app.views.confs import (
     CompareConfDiff,
     BatchSyncConfToHostFromDomain
 )
+from ragdoll.app.views.conftrace_manage import ConfTraceData, ConfTraceQuery, ConfChangeRecordQuery
 from ragdoll.app.views.domain import (
     CreateDomain,
     DeleteDomain,
@@ -40,6 +41,8 @@ from ragdoll.app.views.domain_host import (
 from ragdoll.app.views.host_conf_sync_status import GetHostConfSyncStatus
 from vulcanus.conf import constant
 
+from ragdoll.app.views.statistics import Statistics
+
 URLS = [
     (CreateDomain, constant.CREATE_DOMAIN),
     (DeleteDomain, constant.DELETE_DOMAIN),
@@ -60,5 +63,9 @@ URLS = [
     (QuerySupportedConfs, constant.QUERY_SUPPORTED_CONFS),
     (CompareConfDiff, constant.COMPARE_CONF_DIFF),
     (BatchSyncConfToHostFromDomain, constant.BATCH_SYNC_CONF_TO_HOST_FROM_DOMAIN),
-    (GetHostConfSyncStatus, constant.HOST_CONF_SYNC_STATUS)
+    (GetHostConfSyncStatus, constant.HOST_CONF_SYNC_STATUS),
+    (ConfTraceData, constant.CONF_TRACE_DATA),
+    (ConfTraceQuery, constant.CONF_TRACE_QUERY),
+    (Statistics, constant.DOMAIN_SYNC_DATA),
+    (ConfChangeRecordQuery, constant.CONF_CHANGE_RECORD),
 ]

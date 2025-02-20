@@ -26,6 +26,5 @@
   type: update_config_sync_status_task
   enable: true
   timed:
-    day_of_week: 0-6
-    hour: 3
-    trigger: cron
+    minutes: 60
+    trigger: interval

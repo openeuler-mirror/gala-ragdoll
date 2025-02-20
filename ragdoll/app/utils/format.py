@@ -1,3 +1,4 @@
+import datetime
 import glob
 import os
 import queue
@@ -14,8 +15,10 @@ import requests
 import yaml
 from flask import g
 
-from vulcanus.conf.constant import HOSTS_FILTER
+from vulcanus.conf.constant import HOSTS_FILTER, ADMIN_USER, CERES_COLLECT_FILE
 from vulcanus.restful.resp.state import SUCCEED
+from vulcanus.exceptions import DatabaseConnectionFailed
+from vulcanus.restful.response import BaseResponse
 
 from ragdoll.app import configuration
 from vulcanus.log.log import LOGGER
@@ -261,7 +264,7 @@ class Format(object):
         hostlist = []
         domainPath = os.path.join(TARGETDIR, domainName)
         hostPath = os.path.join(domainPath, "hostRecord.txt")
-        if not os.path.isfile(hostPath) or os.stat(hostPath).st_size == 0:
+        if not os.path.isfile(hostPath):
             return hostlist
         try:
             with open(hostPath, 'r') as d_file:
@@ -675,17 +678,21 @@ class Format(object):
             from ragdoll.app.proxy.host_conf_sync_status import HostConfSyncStatusProxy
             add_host_sync_status_list = list()
             for host in host_infos:
+                contained_flag = Format.isContainedHostIdInOtherDomain(host.get("hostId"))
+                if contained_flag:
+                    continue
                 host_sync_status = {
                     "host_id": host.get("hostId"),
                     "host_ip": host.get("ip"),
                 }
                 add_host_sync_status_list.append(host_sync_status)
-            callback = HostConfSyncStatusProxy()
-            callback.connect()
-            result = callback.add_host_sync_status(domain, add_host_sync_status_list)
+            with HostConfSyncStatusProxy() as callback:
+                result = callback.add_host_sync_status(domain, add_host_sync_status_list)
             if result != SUCCEED:
                 LOGGER.error(
                     "Failed to add host sync status, please check the interface of /manage/host/sync/status/add.")
+        except DatabaseConnectionFailed as connect_ex:
+            LOGGER.error(f"database error occurred: {connect_ex}")
         except requests.exceptions.RequestException as connect_ex:
             LOGGER.error(f"An error occurred: {connect_ex}")
             LOGGER.error("Failed to add host sync status, please check the interface of /manage/host/sync/status/add.")
@@ -695,19 +702,20 @@ class Format(object):
         # 数据入库
         try:
             from ragdoll.app.proxy.host_conf_sync_status import HostConfSyncStatusProxy
+            from ragdoll.app.proxy.domain import DomainProxy
             delete_host_sync_status_list = []
             for host in hostInfos:
-                delete_host_sync_status = {
-                    "host_id": host.get("hostId"),
-                }
-                delete_host_sync_status_list.append(delete_host_sync_status)
-            callback = HostConfSyncStatusProxy()
-            callback.connect()
-            result = callback.delete_host_sync_status(domain, delete_host_sync_status_list)
+                delete_host_sync_status_list.append(host.get("hostId"))
+            with DomainProxy() as domainCallBack:
+                domain_info = domainCallBack.query_domain_by_name(domain)
+            with HostConfSyncStatusProxy() as callback:
+                result = callback.delete_host_sync_status(domain_info.domain_id, delete_host_sync_status_list)
             if result != SUCCEED:
                 LOGGER.error(
                     "Failed to delete host sync status, please check the interface of "
                     "/manage/host/sync/status/delete.")
+        except DatabaseConnectionFailed as connect_ex:
+            LOGGER.error(f"database error occurred: {connect_ex}")
         except requests.exceptions.RequestException as connect_ex:
             LOGGER.error(f"An error occurred: {connect_ex}")
             LOGGER.error(
@@ -959,7 +967,6 @@ class Format(object):
             }
 
         """
-        from vulcanus.conf.constant import CERES_COLLECT_FILE
         from ragdoll.app.core.ssh import execute_command_and_parse_its_result
         from ragdoll.app.core.model import ClientConnectArgs
         command = CERES_COLLECT_FILE % json.dumps(file_list)
@@ -1014,7 +1021,7 @@ class Format(object):
                         ...
                     ]
         """
-        from vulcanus.restful.response import BaseResponse
+        from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
         from vulcanus.multi_thread_handler import MultiThreadHandler
         codeNum = 200
         codeString = "collect host config succeed"
@@ -1030,7 +1037,7 @@ class Format(object):
             host_ids.append(str(host_id))
         filters = {"host_ids": host_ids}
         query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
-        response_data = BaseResponse.get_response(method="GET", url=query_url, data={}, header=g.headers)
+        response_data = RestfulBaseResponse.get_response(method="GET", url=query_url, data={}, header=g.headers)
         host_info_list = response_data.get("data", [])
         if not host_info_list:
             LOGGER.warning("No valid host information was found.")
@@ -1175,6 +1182,7 @@ class Format(object):
             with open(key_file_path, 'w', encoding="UTF-8") as keyfile:
                 os.chmod(key_file_path, 0o600)
                 keyfile.write(host['pkey'])
+                keyfile.write("\n")
             host_ip = host['host_ip']
             host_vars = {
                 "ansible_host": host_ip,
@@ -1282,11 +1290,11 @@ class Format(object):
         file_path_infos = params.get('file_path_infos')
         host_ids = params.get('host_ids')
         sync_result = list()
-        from vulcanus.restful.response import BaseResponse
+        from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
         # 获取host信息
         filters = {"host_ids": host_ids}
         query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
-        response_data = BaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
+        response_data = RestfulBaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
         host_list = response_data.get("data", [])
         if not host_list:
             LOGGER.warning("No valid host information was found.")
@@ -1362,27 +1370,290 @@ class Format(object):
 
     @staticmethod
     def get_cluster_all_host(cluster_id):
-        from vulcanus.restful.response import BaseResponse
+        from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
         # 获取host信息
         filters = {"cluster_list": [cluster_id]}
         query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
-        response_data = BaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
+        response_data = RestfulBaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
         host_list = response_data.get("data", [])
         return host_list
 
     @staticmethod
     def get_cluster_domain(cluster_id):
-        from ragdoll.app.proxy.domain import DomainProxy
-        callback = DomainProxy()
-        callback.connect()
-        domain_page_filter = {"cluster_list": [cluster_id]}
-        code, result = callback.get_domains_by_cluster(domain_page_filter)
-        domain_list = result.get("domain_infos")
-        domain_id_list = []
-        if not domain_list:
+        try:
+            from ragdoll.app.proxy.domain import DomainProxy
+            with DomainProxy() as callback:
+                domain_page_filter = {"cluster_list": [cluster_id]}
+                code, result = callback.get_domains_by_cluster(domain_page_filter)
+            domain_list = result.get("domain_infos")
+            domain_id_list = []
+            if not domain_list:
+                return domain_id_list
+            for domain in domain_list:
+                domain_id_list.append(domain.get("domain_id"))
             return domain_id_list
-        for domain in domain_list:
-            domain_id_list.append(domain.get("domain_id"))
-        return domain_id_list
+        except DatabaseConnectionFailed as connect_ex:
+            LOGGER.error(f"database error occurred: {connect_ex}")
+            return None
 
+    @staticmethod
+    def query_host_info(host_ids):
+        from vulcanus import sign_data, load_private_key
+        from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
+        from ragdoll.app import cache
+        filters = {"host_ids": host_ids}
+        query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
+        signature = sign_data(filters, load_private_key(cache.location_cluster.get("private_key")))
+        headers = {"X-Permission": "RSA", "X-Signature": signature, "X-Cluster-Username": ADMIN_USER}
+        response_data = RestfulBaseResponse.get_response(method="Get", url=query_url, data={}, header=headers)
+        host_info_list = response_data.get("data", [])
+        if not host_info_list:
+            LOGGER.warning("No valid host information was found.")
+        return host_info_list
+
+    @staticmethod
+    def add_domain_conf_trace_flag(params, successDomain, tempDomainName):
+        # 对successDomain成功的domain添加文件监控开关、告警开关
+        if len(successDomain) > 0:
+            from vulcanus.database.proxy import RedisProxy
+            # 文件监控开关
+            conf_change_flag = params.get("conf_change_flag")
+            if conf_change_flag:
+                RedisProxy.redis_connect.set(tempDomainName + "_conf_change", 1)
+            else:
+                RedisProxy.redis_connect.set(tempDomainName + "_conf_change", 0)
+            # 告警开关
+            report_flag = params.get("report_flag")
+            if report_flag:
+                RedisProxy.redis_connect.set(tempDomainName + "_report", 1)
+            else:
+                RedisProxy.redis_connect.set(tempDomainName + "_report", 0)
+
+    @staticmethod
+    def uninstall_trace(host_ids, domainName):
+        from ragdoll.app.utils.conftrace_tools import ConfTraceTools
+        try:
+            host_info_list = Format.query_host_info(host_ids)
+            if len(host_info_list) == 0:
+                LOGGER.warning(
+                    "Failed to conf trace mgmt, no host in domain")
+            else:
+                code_num, code_string, host_ip_trace_result = ConfTraceTools.ansible_conf_trace_mgmt(host_info_list,
+                                                                                                     "stop", None,
+                                                                                                     domainName)
+                if code_num != SUCCEED:
+                    LOGGER.error(
+                        "Failed to conf trace mgmt, please check the interface ansible_conf_trace_mgmt")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to conf trace mgmt, please check the interface of ansible_conf_trace_mgmt")
+
+    @staticmethod
+    def clear_all_domain_data(domainName, successDomain, host_ids, domain_id):
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        if len(successDomain) > 0:
+            from vulcanus.database.proxy import RedisProxy
+            # 1.清理redis key值
+            RedisProxy.redis_connect.delete(domainName + "_conf_change")
+            RedisProxy.redis_connect.delete(domainName + "_report")
+            # 2.清理数据库数据，以避免再次添加业务域的时候还能看到以往的记录
+            Format.delete_conf_trace_infos([], domainName)
+            # 3.清理domain下面的host sync记录
+            Format.delete_host_conf_sync_status(domain_id, host_ids)
+
+    @staticmethod
+    def get_conf_change_flag(domain):
+        from vulcanus.database.proxy import RedisProxy
+        domain_conf_change = RedisProxy.redis_connect.get(domain + "_conf_change")
+        return domain_conf_change
+
+    @staticmethod
+    def install_update_agith(domain, host_ids):
+        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
+        install_resp_code = "200"
+        # 获取domain的文件监控开关
+        domain_conf_change = Format.get_conf_change_flag(domain)
+        conf_files_list = Format.get_conf_files_list(domain)
+        if len(host_ids) > 0 and int(domain_conf_change) == 1 and len(conf_files_list) > 0:
+            # 安装并启动agith
+            try:
+                from ragdoll.app.utils.conftrace_tools import ConfTraceTools
+                host_info_list = Format.query_host_info(host_ids)
+                if len(host_info_list) == 0:
+                    LOGGER.warning(
+                        "Failed to conf trace mgmt, no host in domain")
+                else:
+                    code_num, code_string, host_ip_trace_result = ConfTraceTools.ansible_conf_trace_mgmt(host_info_list,
+                                                                                                         "start",
+                                                                                                         conf_files_list,
+                                                                                                         domain)
+                    if code_num != SUCCEED:
+                        install_resp_code = "500"
+                        LOGGER.error(
+                            "Failed to conf trace mgmt, please check the interface ansible_conf_trace_mgmt")
+
+            except requests.exceptions.RequestException as connect_ex:
+                LOGGER.error(f"An error occurred: {connect_ex}")
+                LOGGER.error(
+                    "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
+
+            # 根据业务有是否有配置，有配置并且agith启动成功情况下进行agith的配置
+            if len(conf_files_list) > 0 and install_resp_code == "200":
+                Format.update_agith_conf(conf_files_list, host_ids, domain)
+
+    @staticmethod
+    def uninstall_hosts_agith(containedInHost, domain):
+        # 根据containedInHost 停止agith服务，删除agith，删除redis key值
+        if len(containedInHost) > 0:
+            # 1.根据containedInHost 停止agith服务，删除agith
+            from vulcanus.database.proxy import RedisProxy
+            Format.uninstall_trace(containedInHost, domain)
+            # 2.清理数据库数据，以避免再次添加业务域的时候还能看到以往的记录
+            Format.delete_conf_trace_infos(containedInHost, domain)
+            # 3.清理host sync记录
+            Format.delete_host_conf_sync_status(domain, containedInHost)
+
+    @staticmethod
+    def delete_conf_trace_infos(containedInHost, domain):
+        # 数据入库
+        from ragdoll.app.proxy.conf_trace import ConfTraceProxy
+        try:
+            conf_trace_delete_data = {
+                "domain_name": domain,
+                "host_ids": containedInHost
+            }
+            with ConfTraceProxy() as callback:
+                status_code = callback.delete_conf_trace_info(conf_trace_delete_data)
+            if status_code != SUCCEED:
+                LOGGER.error(
+                    "Failed to delete trace info, please check the interface of delete_conf_trace_info")
+        except DatabaseConnectionFailed as connect_ex:
+            LOGGER.error(f"database error occurred: {connect_ex}")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to delete trace info, please check the interface of delete_conf_trace_info")
+
+    @staticmethod
+    def get_conf_files_list(domain):
+        conf_files_list = []
+        conf_files = Format.get_manageconf_by_domain(domain).get("conf_files")
+        for conf_file in conf_files:
+            if conf_file.get("file_path") in DIRECTORY_FILE_PATH_LIST:
+                # 获取文件夹下面的配置文件
+                from ragdoll.app.utils.object_parse import ObjectParse
+                object_parse = ObjectParse()
+                d_conf = {"filePath": conf_file.get("file_path")}
+                host_ids = Format.get_hostid_list_by_domain(domain)
+                if len(host_ids):
+                    _, _, file_paths = object_parse.get_directory_files(host_ids[0])
+                    if len(file_paths) > 0:
+                        conf_files_list.extend(file_paths)
+            else:
+                conf_files_list.append(conf_file.get("file_path"))
+        return conf_files_list
+
+    @staticmethod
+    def update_agith(conf_files_list, domain):
+        # 根据containedInHost,监控开关 停止agith服务，删除agith，删除redis key值
+        domain_conf_change_flag = Format.get_conf_change_flag(domain)
+        if int(domain_conf_change_flag) == 1:
+            # 获取domain下的主机id
+            host_ids = Format.get_hostid_list_by_domain(domain)
+            # 根据主机id和domain更新agith监控的文件
+            if len(host_ids) > 0:
+                Format.update_agith_conf(conf_files_list, host_ids, domain)
+
+    @staticmethod
+    def update_agith_conf(conf_files_list, host_ids, domain_name):
+        try:
+            from ragdoll.app.utils.conftrace_tools import ConfTraceTools
+            host_info_list = Format.query_host_info(host_ids)
+            if len(host_info_list) == 0:
+                LOGGER.warning(
+                    "Failed to conf trace mgmt, no host in domain")
+            else:
+                code_num, code_string, host_ip_trace_result = ConfTraceTools.ansible_conf_trace_mgmt(host_info_list,
+                                                                                                     "update",
+                                                                                                     conf_files_list,
+                                                                                                     domain_name)
+                if code_num != SUCCEED:
+                    LOGGER.error(
+                        "Failed to conf trace mgmt, please check the interface of ansible_conf_trace_mgmt")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to conf trace mgmt, please check the interface of ansible_conf_trace_mgmt")
+
+    @staticmethod
+    def delete_host_conf_sync_status(domain_id, hostIds):
+        try:
+            from ragdoll.app.proxy.host_conf_sync_status import HostConfSyncStatusProxy
+            with HostConfSyncStatusProxy() as callback:
+                code_num = callback.delete_host_sync_status(domain_id, hostIds)
+            if code_num != SUCCEED:
+                LOGGER.error(
+                    "Failed to delete sync status, please check the interface of delete_host_sync_status")
+        except DatabaseConnectionFailed as connect_ex:
+            LOGGER.error(f"database error occurred: {connect_ex}")
+        except requests.exceptions.RequestException as connect_ex:
+            LOGGER.error(f"An error occurred: {connect_ex}")
+            LOGGER.error(
+                "Failed to delete sync status, please check the interface of delete_host_sync_status")
+
+    @staticmethod
+    def give_alarm(params):
+        try:
+            # 查看是否打开告警开关
+            from vulcanus.database.proxy import RedisProxy
+            from ragdoll.app.proxy.domain_host import DomainHostProxy
+            # 警告开关
+            domain_name = params.get("domain_name")
+            report_flag = RedisProxy.redis_connect.get(domain_name + "_report")
+            # 根据告警开关发送短信
+            if int(report_flag) == 1:
+                LOGGER.info("开始发送短信")
+                phone_list = configuration.alarm.billId.split(',')
+                for phone in phone_list:
+                    data = {
+                        "params": {
+                            "rspId": configuration.alarm.rspId,
+                            "billId": phone,
+                            "userName": configuration.alarm.userName,
+                            "apiKey": configuration.alarm.apiKey,
+                            "infoMap": ""
+                        }
+                    }
+                    file = params.get("file")
+                    user = params.get("user")
+                    cmd = params.get("cmd")
+                    login_ip = params.get("loginip")
+                    host_id = params.get("host_id")
+                    with DomainHostProxy() as callback:
+                        code_num, domain_host_info = callback.get_domain_host_by_host_id(host_id)
+
+                    alarm_txt = f"【告警短信】操作系统配置朔源:ip地址为{domain_host_info.host_ip}，配置文件{file}发生变更,变更人{user}，修改命令{cmd}，" \
+                                f"修改来源ip{login_ip}，修改时间{datetime.datetime.now()}"
+
+                    infoMap = {"txt_aops": alarm_txt}
+                    data["params"]["infoMap"] = str(json.dumps(infoMap))
+                    curl_command = f"curl -X POST {configuration.alarm.url} -H 'Content-Type: application/json' -k -d '{json.dumps(data)}'"
+                    response_code = os.system(curl_command)
+                    LOGGER.info(f"response_code: {response_code}")
+        except requests.exceptions.HTTPError as http_err:
+            print(f"HTTP错误: {http_err}")
+        except requests.exceptions.ConnectionError as conn_err:
+            print(f"连接错误: {conn_err}")
+        except requests.exceptions.Timeout as timeout_err:
+            print(f"请求超时: {timeout_err}")
+        except requests.exceptions.RequestException as req_err:
+            print(f"请求错误: {req_err}")
+
+    @staticmethod
+    def get_all_domains():
+        from ragdoll.app.proxy.domain import DomainProxy
+        with DomainProxy() as callback:
+            domains = callback.get_all_domains()
+        return domains
 

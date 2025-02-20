@@ -115,7 +115,8 @@ class DomainProxy(MysqlProxy):
                 Domain.domain_id,
                 Domain.domain_name,
                 Domain.cluster_id,
-                Domain.priority
+                Domain.priority,
+                Domain.sync_status
             ).filter(*filters)
         )
 
@@ -232,3 +233,76 @@ class DomainProxy(MysqlProxy):
             LOGGER.error(error)
             LOGGER.error("delete domain %s fail", domain_id)
             return DATABASE_DELETE_ERROR
+
+    def update_domain_sync_status(self, domain_diff_resp):
+        sync_count_data = {}
+        for domain_diff in domain_diff_resp:
+            domain_name = domain_diff.get("domain_name")
+            sync_count_data[domain_name] = {"sync_count": 0, "no_sync_count": 0}
+        for domain_diff in domain_diff_resp:
+            # 1 同步 0 不同步
+            domain_name = domain_diff.get("domain_name")
+            sync_status = domain_diff.get("sync_status")
+            if sync_status == 0:
+                sync_count_data[domain_name]["no_sync_count"] += 1
+            if sync_status == 1:
+                sync_count_data[domain_name]["sync_count"] += 1
+        for key, value in sync_count_data.items():
+            domain_info = self.session.query(Domain).filter(Domain.domain_name == key).first()
+            # 全部同步
+            if value["sync_count"] > 0 and value["no_sync_count"] == 0:
+                new_domain_data = {"domain_id": domain_info.domain_id, "sync_status": 1}
+                self.session.query(Domain).filter(Domain.domain_id == domain_info.domain_id).update(new_domain_data)
+            # 全部未同步
+            if value["sync_count"] == 0 and value["no_sync_count"] > 0:
+                new_domain_data = {"domain_id": domain_info.domain_id, "sync_status": 0}
+                self.session.query(Domain).filter(Domain.domain_id == domain_info.domain_id).update(new_domain_data)
+            # 未知，定位未同步
+            if value["sync_count"] == 0 and value["no_sync_count"] == 0:
+                new_domain_data = {"domain_id": domain_info.domain_id, "sync_status": 0}
+                self.session.query(Domain).filter(Domain.domain_id == domain_info.domain_id).update(new_domain_data)
+            # 有同步的，有不同步的，显示为2，部分同步
+            if value["sync_count"] > 0 and value["no_sync_count"] > 0:
+                new_domain_data = {"domain_id": domain_info.domain_id, "sync_status": 2}
+                self.session.query(Domain).filter(Domain.domain_id == domain_info.domain_id).update(new_domain_data)
+            self.session.commit()
+
+    def sync_data(self):
+        """
+            Returns:
+                int: status code
+                float: sync_count
+                int: no_sync_count
+        """
+        try:
+            sync_count = self.session.query(Domain).filter(Domain.sync_status == 1).count()
+            total_count = self.session.query(Domain).count()
+            if total_count == 0:
+                return SUCCEED, 0.0, 0
+            no_sync_count = self.session.query(Domain).filter(Domain.sync_status == 0).count()
+            sync_rate = sync_count / total_count
+            return SUCCEED, sync_rate, no_sync_count, sync_count
+        except sqlalchemy.exc.SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Query domains fail")
+            return DATABASE_QUERY_ERROR, 0.0, 0
+
+    def query_domain_by_name(self, domain_name: str):
+        """
+            Sort domain info by specified column
+
+            Args:
+                domain_name: aops
+
+            Returns:
+                dict
+        """
+
+        domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+
+        return domain_info
+
+    def get_all_domains(self):
+        domains = self.session.query(Domain).all()
+        return domains
+

@@ -17,8 +17,8 @@
 Description:
 """
 from sqlalchemy import Column
-from sqlalchemy.sql.sqltypes import Integer, String
-
+from sqlalchemy.sql.sqltypes import Integer, String, DateTime, Text
+import datetime
 from vulcanus.database import Base
 
 
@@ -33,6 +33,7 @@ class Domain(Base):  # pylint: disable=R0903
     domain_name = Column(String(50), nullable=False)
     priority = Column(Integer(), default=0)
     cluster_id = Column(String(36))
+    sync_status = Column(Integer(), default=0)
 
 
 class DomainHost(Base):
@@ -71,3 +72,21 @@ class HostConfSyncStatus(Base):
     cluster_id = Column(String(36))
     domain_id = Column(String(36), primary_key=True)
     sync_status = Column(Integer(), default=0)
+
+
+class ConfTraceInfo(Base):
+    """
+    ConfTraceInfo table
+    """
+    __tablename__ = "conf_trace_info"
+
+    UUID = Column(String(36), primary_key=True)
+    cluster_id = Column(String(36))
+    cluster_name = Column(String(36))
+    domain_name = Column(String(16))
+    host_id = Column(String(36))
+    host_ip = Column(String(16))
+    conf_name = Column(String(100))
+    info = Column(Text)
+    conf_change_record = Column(Text)
+    create_time = Column(DateTime, default=datetime.datetime)

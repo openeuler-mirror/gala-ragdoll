@@ -56,7 +56,11 @@ class GetHostSchema(Schema):
     """
     validators for parameter of /host/getHost
     """
-    domainName = fields.String(required=True, validate=lambda s: len(s) > 0)
+    domainName = fields.String(required=False, validate=lambda s: len(s) > 0)
+    hostIp = fields.String(required=False, validate=lambda s: len(s) > 0)
+    sync_status = fields.Integer(required=False)
+    page = fields.Integer(required=False, missing=None, validate=lambda s: s > 0)
+    per_page = fields.Integer(required=False, missing=None, validate=lambda s: 50 > s > 0)
 
 
 class GetNonexistentDomainSchema(Schema):
