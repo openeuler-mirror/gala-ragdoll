@@ -18,7 +18,6 @@ from flask import g
 from vulcanus.conf.constant import HOSTS_FILTER, ADMIN_USER, CERES_COLLECT_FILE
 from vulcanus.restful.resp.state import SUCCEED
 from vulcanus.exceptions import DatabaseConnectionFailed
-from vulcanus.restful.response import BaseResponse
 
 from ragdoll.app import configuration
 from vulcanus.log.log import LOGGER
@@ -667,7 +666,7 @@ class Format(object):
                 else:
                     directory_sync_result = {"filePath": dir_name, "result": "SUCCESS"}
                 syncResult.append(directory_sync_result)
-            single_host_sync_result = {"host_id": host_result.get("host_id"), "syncResult": syncResult}
+            single_host_sync_result = {"host_id": host_result.get("host_id"), "host_name": host_result.get('host_name'), "host_ip": host_result.get("host_ip"), "syncResult": syncResult}
             sync_res.append(single_host_sync_result)
         return codeNum, codeString, sync_res
 
@@ -1290,11 +1289,11 @@ class Format(object):
         file_path_infos = params.get('file_path_infos')
         host_ids = params.get('host_ids')
         sync_result = list()
-        from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
+        from vulcanus.restful.response import BaseResponse
         # 获取host信息
         filters = {"host_ids": host_ids}
         query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
-        response_data = RestfulBaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
+        response_data = BaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
         host_list = response_data.get("data", [])
         if not host_list:
             LOGGER.warning("No valid host information was found.")
@@ -1302,12 +1301,12 @@ class Format(object):
             codeString = "No valid host information was found."
             return codeNum, codeString, sync_result
 
-        # 将ip和id对应起来
-        host_id_ip_dict = dict()
+        # 将ip和host对应起来
+        host_ip_dict = dict()
         if host_list:
             for host in host_list:
                 key = host['host_ip'] + "_" + str(host['ssh_port'])
-                host_id_ip_dict[key] = host['host_id']
+                host_ip_dict[key] = host
 
         host_ip_sync_result = Format.ansible_sync_domain_config_content(host_list, file_path_infos)
 
@@ -1317,9 +1316,11 @@ class Format(object):
             return codeNum, codeString, sync_result
         # 处理成id对应结果
         for key, value in host_ip_sync_result.items():
-            host_id = host_id_ip_dict.get(key)
+            host = host_ip_dict.get(key)
             single_result = {
-                "host_id": host_id,
+                "host_id": host['host_id'],
+                "host_name": host['host_name'],
+                "host_ip": host['host_ip'],
                 "syncResult": value
             }
             sync_result.append(single_result)
