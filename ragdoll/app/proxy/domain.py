@@ -279,7 +279,7 @@ class DomainProxy(MysqlProxy):
             total_count = self.session.query(Domain).count()
             if total_count == 0:
                 return SUCCEED, 0.0, 0, 0
-            no_sync_count = self.session.query(Domain).filter(Domain.sync_status == 0).count()
+            no_sync_count = total_count - sync_count
             sync_rate = sync_count / total_count
             return SUCCEED, sync_rate, no_sync_count, sync_count
         except sqlalchemy.exc.SQLAlchemyError as error:

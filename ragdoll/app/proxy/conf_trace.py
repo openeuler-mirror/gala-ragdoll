@@ -168,7 +168,7 @@ class ConfTraceProxy(MysqlProxy):
             domain_host = self.session.query(DomainHost).filter(DomainHost.host_id == host_id).first()
             host_ip = domain_host.host_ip
             # 根据内容拼接配置变更信息
-            info_str = f"用户:{data.get('user')} 进程:{data.get('cmd')} 修改了文件:{data.get('file')}"
+            info_str = f"user:{data.get('user')} process:{data.get('cmd')} modified the file:{data.get('file')}"
 
             conf_trace_info = ConfTraceInfo(UUID=str(uuid.uuid4()), cluster_id=domain_info.cluster_id,
                                             cluster_name=cluster_name, domain_name=domain_name, host_id=host_id,
@@ -353,7 +353,7 @@ class ConfTraceProxy(MysqlProxy):
         LOGGER.error(f"conf_trace_infos is {conf_trace_infos}")
         for conf_trace_info in conf_trace_infos:
             info_dict = json.loads(conf_trace_info.info)
-            info_str = f"用户:{info_dict.get('user')} 进程:{info_dict.get('cmd')} 修改了文件:{info_dict.get('file')}"
+            info_str = f"user:{info_dict.get('user')} process:{info_dict.get('cmd')} modified the file:{info_dict.get('file')}"
             ptrace_data = "=> ".join(f"{item['cmd']}:{item['pid']}" for item in info_dict.get('ptrace'))
             ptrace = f"{info_dict.get('cmd')} => {ptrace_data}"
             conf_trace_info = {
