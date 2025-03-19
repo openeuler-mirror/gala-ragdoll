@@ -1373,7 +1373,7 @@ class Format(object):
     def get_cluster_all_host(cluster_id):
         from vulcanus.restful.response import BaseResponse as RestfulBaseResponse
         # 获取host信息
-        filters = {"cluster_list": [cluster_id]}
+        filters = {"cluster_list": [cluster_id], "status": [0]}
         query_url = f"http://{configuration.domain}{HOSTS_FILTER}?{urlencode(filters)}"
         response_data = RestfulBaseResponse.get_response(method="Get", url=query_url, data={}, header=g.headers)
         host_list = response_data.get("data", [])
