@@ -1603,53 +1603,6 @@ class Format(object):
             LOGGER.error(
                 "Failed to delete sync status, please check the interface of delete_host_sync_status")
 
-    @staticmethod
-    def give_alarm(params):
-        try:
-            # 查看是否打开告警开关
-            from vulcanus.database.proxy import RedisProxy
-            from ragdoll.app.proxy.domain_host import DomainHostProxy
-            # 警告开关
-            domain_name = params.get("domain_name")
-            report_flag = RedisProxy.redis_connect.get(domain_name + "_report")
-            # 根据告警开关发送短信
-            if int(report_flag) == 1:
-                LOGGER.info("开始发送短信")
-                phone_list = configuration.alarm.billId.split(',')
-                for phone in phone_list:
-                    data = {
-                        "params": {
-                            "rspId": configuration.alarm.rspId,
-                            "billId": phone,
-                            "userName": configuration.alarm.userName,
-                            "apiKey": configuration.alarm.apiKey,
-                            "infoMap": ""
-                        }
-                    }
-                    file = params.get("file")
-                    user = params.get("user")
-                    cmd = params.get("cmd")
-                    login_ip = params.get("loginip")
-                    host_id = params.get("host_id")
-                    with DomainHostProxy() as callback:
-                        code_num, domain_host_info = callback.get_domain_host_by_host_id(host_id)
-
-                    alarm_txt = f"【告警短信】操作系统配置朔源:ip地址为{domain_host_info.host_ip}，配置文件{file}发生变更,变更人{user}，修改命令{cmd}，" \
-                                f"修改来源ip{login_ip}，修改时间{datetime.datetime.now()}"
-
-                    infoMap = {"txt_aops": alarm_txt}
-                    data["params"]["infoMap"] = str(json.dumps(infoMap))
-                    curl_command = f"curl -X POST {configuration.alarm.url} -H 'Content-Type: application/json' -k -d '{json.dumps(data)}'"
-                    response_code = os.system(curl_command)
-                    LOGGER.info(f"response_code: {response_code}")
-        except requests.exceptions.HTTPError as http_err:
-            print(f"HTTP错误: {http_err}")
-        except requests.exceptions.ConnectionError as conn_err:
-            print(f"连接错误: {conn_err}")
-        except requests.exceptions.Timeout as timeout_err:
-            print(f"请求超时: {timeout_err}")
-        except requests.exceptions.RequestException as req_err:
-            print(f"请求错误: {req_err}")
 
     @staticmethod
     def get_all_domains():

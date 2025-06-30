@@ -69,12 +69,6 @@ class ConfTraceData(BaseResponse):
         status_code = callback.add_conf_trace_info(params)
         if status_code != state.SUCCEED:
             return self.response(code=SERVER_ERROR, message="Failed to upload data, service error")
-        else:
-            # 按照host_id 和 file判断当天是否存在修改记录，有就不发短信了，没有就发
-            code, confTraceInfos = callback.find_conf_trace_info_day(params)
-            # 发送短信
-            if len(confTraceInfos) <= 1:
-                Format.give_alarm(params)
         return self.response(code=SUCCEED, message="Succeed to upload conf trace info data")
 
 

@@ -371,33 +371,6 @@ class ConfTraceProxy(MysqlProxy):
         result["total_count"] = total_count
         return result
 
-    def find_conf_trace_info_day(self, data):
-        """
-            query conf trace info from table today
-
-            Args:
-                data: parameter, e.g.
-                    {
-                        "domain_name": "aops",
-                        "host_id": 1,
-                        "conf_name": "/etc/hostname",
-                    }
-
-            Returns:
-                int: SUCCEED or DATABASE_INSERT_ERROR
-        """
-        result = []
-        try:
-            confTraceInfos = self.session.query(ConfTraceInfo).filter(
-                ConfTraceInfo.domain_name == data.get('domain_name')) \
-                .filter(ConfTraceInfo.host_id == data.get('host_id')) \
-                .filter(func.DATE(ConfTraceInfo.create_time) == func.CURDATE()).all()
-            LOGGER.debug("query today conf trace info succeed")
-            return SUCCEED, confTraceInfos
-        except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.error(error)
-            LOGGER.error("query today conf trace info fail")
-            return DATABASE_QUERY_ERROR, result
 
     def _sort_conf_change_record_by_column(self, data):
         """
