@@ -1,6 +1,6 @@
 Name:		gala-ragdoll
-Version:	v2.0.0
-Release:	2
+Version:	v2.1.0
+Release:	1
 Summary:	Configuration traceability
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/%{name}
@@ -35,12 +35,23 @@ python3 pakcage of gala-ragdoll
 
 
 #install for gala-ragdoll
+%install
 %py3_install
 install yang_modules/*.yang %{buildroot}/%{python3_sitelib}/yang_modules/
 mkdir -p %{buildroot}/opt/aops/database/
 cp ragdoll/database/*.sql %{buildroot}/opt/aops/database/
 cp -r ansible_task %{buildroot}/opt/aops/
 mkdir -p %{buildroot}/etc/aops/conf.d
+
+# 清理可能残留的旧文件
+rm -f $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace-x86
+rm -f $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace-aarch
+# 根据架构选择并安装脚本（统一命名为 ragdoll-filetrace）
+if [ "%{_arch}" = "x86_64" ]; then
+    install -m 0755 ragdoll-filetrace-x86 $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace
+else
+    install -m 0755 ragdoll-filetrace-aarch $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace
+fi
 
 
 %files
@@ -53,9 +64,8 @@ mkdir -p %{buildroot}/etc/aops/conf.d
 %attr(0755, root, root) /opt/aops/database/*
 %{python3_sitelib}/ragdoll-*.egg-info/*
 %{python3_sitelib}/ragdoll/*
-%{_bindir}/ragdoll-filetrace
-%{_prefix}/lib/systemd/system/ragdoll-filetrace.service
-%{_prefix}/bin/ragdoll-filetrace
+%attr(0755, root, root) %{_unitdir}/ragdoll-filetrace.service
+%attr(0755, root, root) %{_bindir}/ragdoll-filetrace
 
 
 
@@ -66,8 +76,12 @@ mkdir -p %{buildroot}/etc/aops/conf.d
 
 
 %changelog
-* Wed Dec 11 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-2
-- Added real-time monitoring file function
+* Tue Nov 19 2024 luxuexian<luxuexian@huawei.com> - v2.1.0-1
+- init 24.03-lts-sp1 branch
+- set uwsgi buffer-size
+
+* Thu Sep 5 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-2
+- update sync interface request method
 
 * Tue May 28 2024 smjiao<smjiao@isoftstone.com> - v2.0.0-1
 - support signature verification
