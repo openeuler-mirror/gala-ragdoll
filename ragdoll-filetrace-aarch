@@ -187,34 +187,27 @@ TRACEPOINT_PROBE(syscalls, sys_enter_copy_file_range) {
     return 0;
 }
 //for sed command
-//TRACEPOINT_PROBE(syscalls, sys_enter_rename) {
-//    struct task_struct* t;
-//    struct task_struct* p;
-
-//    struct event e = {}; 
-//    e.flag = 1;
-
-//    t = (struct task_struct*)bpf_get_current_task();
-//    bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
-//    bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
-
-//    bpf_probe_read(&p, sizeof(p), &t->real_parent);
-//    bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
-//    bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
-
-//    u64 uid_gid = bpf_get_current_uid_gid();
-//    e.uid = uid_gid & 0xFFFFFFFF;  
-//    e.gid = uid_gid >> 32;        
-//    bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)args->newname);
-//    //bpf_trace_printk("Process calling sys_enter_rename newfilename:%s \\n", e.filename);
-//    events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
-//    return 0;
-//}
-
 TRACEPOINT_PROBE(syscalls, sys_enter_renameat) {
-    char comm[TASK_COMM_LEN];
-    bpf_get_current_comm(&comm, sizeof(comm));
-    bpf_trace_printk("Process %s is calling renameat\\n", comm);
+    struct task_struct* t;
+    struct task_struct* p;
+
+    struct event e = {}; 
+    e.flag = 1;
+
+    t = (struct task_struct*)bpf_get_current_task();
+    bpf_probe_read(&e.pid, sizeof(e.pid), &t->tgid);
+    bpf_probe_read(&e.cmd, sizeof(e.cmd), &t->comm);
+
+    bpf_probe_read(&p, sizeof(p), &t->real_parent);
+    bpf_probe_read(&e.ppid, sizeof(e.ppid), &p->tgid);
+    bpf_probe_read(&e.pcmd, sizeof(e.pcmd), &p->comm);
+
+    u64 uid_gid = bpf_get_current_uid_gid();
+    e.uid = uid_gid & 0xFFFFFFFF;  
+    e.gid = uid_gid >> 32;        
+    bpf_probe_read_str((void*)&e.filename, sizeof(e.filename), (const void*)args->newname);
+    //bpf_trace_printk("Process calling sys_enter_rename newfilename:%s \\n", e.filename);
+    events.perf_submit((struct pt_regs *)args, &e, sizeof(e));
     return 0;
 }
 
