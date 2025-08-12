@@ -1,6 +1,6 @@
 Name:		gala-ragdoll
 Version:	v2.1.0
-Release:	1
+Release:	2
 Summary:	Configuration traceability
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/%{name}
@@ -43,16 +43,6 @@ cp ragdoll/database/*.sql %{buildroot}/opt/aops/database/
 cp -r ansible_task %{buildroot}/opt/aops/
 mkdir -p %{buildroot}/etc/aops/conf.d
 
-# 清理可能残留的旧文件
-rm -f $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace-x86
-rm -f $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace-aarch
-# 根据架构选择并安装脚本（统一命名为 ragdoll-filetrace）
-if [ "%{_arch}" = "x86_64" ]; then
-    install -m 0755 ragdoll-filetrace-x86 $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace
-else
-    install -m 0755 ragdoll-filetrace-aarch $RPM_BUILD_ROOT%{_bindir}/ragdoll-filetrace
-fi
-
 
 %files
 %doc doc/*
@@ -64,9 +54,6 @@ fi
 %attr(0755, root, root) /opt/aops/database/*
 %{python3_sitelib}/ragdoll-*.egg-info/*
 %{python3_sitelib}/ragdoll/*
-%attr(0755, root, root) %{_unitdir}/ragdoll-filetrace.service
-%attr(0755, root, root) %{_bindir}/ragdoll-filetrace
-
 
 
 %files -n python3-gala-ragdoll
@@ -76,6 +63,9 @@ fi
 
 
 %changelog
+* Tue Aug 19 2025 penghaitao<htpengc@isoftstone.com> - v2.1.0-2
+- Remove ragdoll-filetrace
+
 * Tue Nov 19 2024 luxuexian<luxuexian@huawei.com> - v2.1.0-1
 - init 24.03-lts-sp1 branch
 - set uwsgi buffer-size
