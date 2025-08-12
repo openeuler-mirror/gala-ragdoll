@@ -1,5 +1,5 @@
 Name:		gala-ragdoll
-Version:	v1.4.0
+Version:	v1.5.0
 Release:	1
 Summary:	Configuration traceability
 License:	MulanPSL2
@@ -46,8 +46,6 @@ install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
 install service/ragdoll %{buildroot}/%{_prefix}/bin/
-install service/ragdoll-filetrace %{buildroot}/%{_prefix}/bin/
-install service/ragdoll-filetrace.service %{buildroot}/%{_prefix}/lib/systemd/system
 
 
 %pre 
@@ -70,11 +68,8 @@ fi
 %license LICENSE
 /%{_sysconfdir}/ragdoll/gala-ragdoll.conf
 %{_bindir}/ragdoll
-%{_bindir}/ragdoll-filetrace
 %{_prefix}/lib/systemd/system/gala-ragdoll.service
-%{_prefix}/lib/systemd/system/ragdoll-filetrace.service
 %{_prefix}/bin/ragdoll
-%{_prefix}/bin/ragdoll-filetrace
 
 
 %files -n python3-gala-ragdoll
@@ -84,6 +79,9 @@ fi
 
 
 %changelog
+* Thu Aug 12 2025 penghaitao<htpengc@isoftstone.com> - v1.5.0-1
+- Remove ragdoll-filetrace
+
 * Thu June 27 2024 zhangdaolong<zhangdaolong@isoftstone.com> - v1.4.0-4
 - Added real-time monitoring file function
 
