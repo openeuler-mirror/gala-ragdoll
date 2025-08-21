@@ -1,6 +1,6 @@
 Name:		gala-ragdoll
 Version:	v2.1.0
-Release:	2
+Release:	3
 Summary:	Configuration traceability
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/%{name}
@@ -63,6 +63,9 @@ mkdir -p %{buildroot}/etc/aops/conf.d
 
 
 %changelog
+* Thu Aug 21 2025 penghaitao<htpengc@isoftstone.com> - v2.1.0-3
+- Modify to gala-filetrace in ansible task
+
 * Tue Aug 19 2025 penghaitao<htpengc@isoftstone.com> - v2.1.0-2
 - Remove ragdoll-filetrace
 
