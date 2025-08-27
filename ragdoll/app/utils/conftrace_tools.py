@@ -36,13 +36,13 @@ class ConfTraceTools(object):
     @staticmethod
     def parse_result(action, result, host_ip_trace_result, HOST_FILE):
         code_num = SUCCEED
-        code_string = f"{action} ragdoll-filetrace succeed"
+        code_string = f"{action} gala-filetrace succeed"
         processor_result = result.splitlines()
         char_to_filter = 'unreachable='
         filtered_list = [item for item in processor_result if char_to_filter in item]
         if not filtered_list:
             code_num = SERVER_ERROR
-            code_string = f"{action} ragdoll-filetrace error, no result"
+            code_string = f"{action} gala-filetrace error, no result"
         for line in filtered_list:
             result_start_index = line.find(":")
             ip_port = line[0:result_start_index]
@@ -173,7 +173,7 @@ class ConfTraceTools(object):
             result = ConfTraceTools.ansible_handler(now_time, ansible_forks, extra_vars, HOST_FILE)
         except Exception as ex:
             LOGGER.error("ansible playbook execute error:", ex)
-            conf_trace_mgmt_result = "ragdoll-filetrace ansible playbook execute error"
+            conf_trace_mgmt_result = "gala-filetrace ansible playbook execute error"
             return SERVER_ERROR, conf_trace_mgmt_result, host_ip_trace_result
         # 根据action解析每个result
         code_num, code_string = ConfTraceTools.parse_result(action, result, host_ip_trace_result, HOST_FILE)
