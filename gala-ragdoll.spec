@@ -192,7 +192,7 @@ mkdir -p %{buildroot}/etc/aops/conf.d
 - add gala-spider in spec
 
 * Mon Sep 6 2021 Yiru Wang<wangyiru1@huawei.com> - v1.0.1-2
-- add web build modle of the aops
+- add web build model of the aops
 
 * Mon Sep 6 2021 Lostwayzxc<luoshengwei@huawei.com> - v1.0.1-1
 - update src, add intelligent check and diagnosis module

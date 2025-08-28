@@ -365,7 +365,7 @@ print("object_with_content is : {}".format(object_with_content))
   ```
   def parse_object_to_ini_content(self, obj):
       """
-      desc: parse the object to the content of type INI accroding the yang file.
+      desc: parse the object to the content of type INI according the yang file.
       """
       content = obj.write()
       content_string = json.dumps(content, indent = 4, ensure_ascii= False)

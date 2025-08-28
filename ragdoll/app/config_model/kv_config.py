@@ -12,7 +12,7 @@
 """
 Time: 2023-07-19 11:23:00
 Author: jiaosimao
-Description: kv tyep config analyze
+Description: kv type config analyze
 """
 import re
 

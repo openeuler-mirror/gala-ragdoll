@@ -76,7 +76,7 @@ class ObjectParse(object):
 
     def parse_conf_to_json(self, conf_path, conf_info):
         """
-        desc: parse the conf contents to the json accroding the yang file.
+        desc: parse the conf contents to the json according the yang file.
         """
         conf_type = self.get_conf_type_by_conf_path(conf_path)
         if not conf_type:
@@ -103,7 +103,7 @@ class ObjectParse(object):
 
     def parse_directory_single_conf_to_json(self, conf_info, directory_path):
         """
-        desc: parse the conf contents to the json accroding the yang file.
+        desc: parse the conf contents to the json according the yang file.
         """
         conf_type = self.get_conf_type_by_conf_path(directory_path)
         if not conf_type:
@@ -124,7 +124,7 @@ class ObjectParse(object):
 
     def parse_dir_conf_to_json(self, dir_path, res_infos):
         """
-        desc: parse the conf contents to the json accroding the yang file.
+        desc: parse the conf contents to the json according the yang file.
         """
         conf_type = self.get_conf_type_by_conf_path(dir_path)
         if not conf_type:

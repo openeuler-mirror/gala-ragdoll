@@ -104,7 +104,7 @@ class AddManagementConfsInDomain(BaseResponse):
         object_parse = ObjectParse()
         yang_module = YangModule()
         conf_tools = ConfTools()
-        # Content is not an empty scene and is directly analyed and parsed
+        # Content is not an empty scene and is directly analyzed and parsed
         if len(contents_list_non_null) > 0:
             # 定义一个字典变量success_contents_not_null用于存储成功的file和content_string
             success_contents_not_null = {}
@@ -239,7 +239,7 @@ class AddManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Add the conf in {} domain, ".format(domain) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage
@@ -362,7 +362,7 @@ class UploadManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domainName) +
+            commit_code = git_tools.gitCommit("Add the conf in {} domain, ".format(domainName) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage
@@ -472,7 +472,7 @@ class DeleteManagementConfsInDomain(BaseResponse):
             succ_conf = ""
             for d_conf in successConf:
                 succ_conf = succ_conf + d_conf + " "
-            commit_code = git_tools.gitCommit("delete the conf in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("delete the conf in {} domain, ".format(domain) +
                                               "the path including : {}".format(succ_conf))
 
         # Joinin together the returned codenum and codeMessage

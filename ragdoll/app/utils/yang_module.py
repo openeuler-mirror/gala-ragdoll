@@ -113,7 +113,7 @@ class YangModule(object):
                         +--rw baseurl?    string
                         +--rw gpgcheck?   string
                         +--rw gpgkey?     string
-        return exmaple:
+        return example:
             [
                 'yum/openEuler.repo/section/name'
                 'yum/openEuler.repo/section/baseurl',
@@ -331,7 +331,7 @@ class YangModule(object):
 
     def get_feature_by_real_path(self, domain, real_path):
         """
-        desc: return the feature in domain accroding the real_path
+        desc: return the feature in domain according the real_path
         emaxple:
             input: 
                 domain:dnf 

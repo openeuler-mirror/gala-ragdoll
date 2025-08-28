@@ -358,13 +358,13 @@ Mulan PSL v2
   Author: orange-snn <songnannan2@huawei.com>
   Date:   2021-07-30T10:19:11+08:00
   
-      Add the conf in dnf domian, the path including : /etc/yum.repos.d/openEuler.repo
+      Add the conf in dnf domain, the path including : /etc/yum.repos.d/openEuler.repo
   
   commit aba49fec012c9880f62199adeeb764cf7e3357dc
   Author: orange-snn <songnannan2@huawei.com>
   Date:   2021-07-30T10:16:13+08:00
   
-      Add the conf in dnf domian, the path including : /etc/yum.repos.d/openEuler.repo
+      Add the conf in dnf domain, the path including : /etc/yum.repos.d/openEuler.repo
   ```
 
   git diff展示两次差异：
