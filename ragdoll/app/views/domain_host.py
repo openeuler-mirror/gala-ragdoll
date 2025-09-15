@@ -117,7 +117,7 @@ class AddHostInDomain(BaseResponse):
         # git commit maessage
         if len(host_infos) > 0:
             git_tools = GitTools()
-            commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Add the host in {} domain, ".format(domain) +
                                               "the host including : {}".format(successHost))
 
         # 添加host到表domain_host
@@ -242,7 +242,7 @@ class DeleteHostInDomain(BaseResponse):
         # git commit message
         if len(containedInHost) > 0:
             git_tools = GitTools()
-            commit_code = git_tools.gitCommit("Delete the host in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Delete the host in {} domain, ".format(domain) +
                                               "the host including : {}".format(containedInHost))
 
         # 将host从表domain_host中删除

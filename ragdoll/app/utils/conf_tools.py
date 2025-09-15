@@ -410,7 +410,7 @@ class ConfTools(object):
     def getRealConfByPath(self, real_conf, path):
         """
         desc: Returns the index and true value corresponding to the PATH in real_conf
-        exmaple:
+        example:
             input:
                 real_conf: [
                     {
@@ -440,7 +440,7 @@ class ConfTools(object):
     def getExpConfByPath(self, manage_confs, path):
         """
         desc: Returns the index and true value corresponding to the PATH in real_conf
-        exmaple:
+        example:
             input:
                 manage_confs: [
                     {

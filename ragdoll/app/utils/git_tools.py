@@ -130,7 +130,7 @@ class GitTools(object):
             shell = ['git checkout {}'.format(next_message["changeId"])]
             output = self.run_shell_return_output(shell)
             message["preValue"] = Format.get_file_content_by_read(path)
-        # the last changlog
+        # the last changelog
         first_message = gitLogMessageList[count - 1]
         first_message["postValue"] = Format.get_file_content_by_read(path)
 
