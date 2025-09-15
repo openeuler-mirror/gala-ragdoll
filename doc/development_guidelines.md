@@ -246,7 +246,7 @@ gala-ragdoll-1.0.0/ragdoll/analy/
     以ini类型为例，示例接口实现为：
 
     ```
-    # yang_module中提供基于modlue返回xpath的接口（getXpathInModule），且ini类型的yang模型的xpath的形式为固定的：
+    # yang_module中提供基于module返回xpath的接口（getXpathInModule），且ini类型的yang模型的xpath的形式为固定的：
     	特性/配置文件/section/option的形式
     # 可以直接定义section和option的index
     SECTIONINDEX = 2

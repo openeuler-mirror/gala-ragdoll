@@ -109,7 +109,7 @@ class AddHostInDomain(BaseResponse):
         # git commit message
         if len(host_infos) > 0:
             git_tools = GitTools()
-            commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Add the host in {} domain, ".format(domain) +
                                               "the host including : {}".format(successHost))
 
         # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
@@ -220,7 +220,7 @@ class DeleteHostInDomain(BaseResponse):
         # git commit message
         if len(containedInHost) > 0:
             git_tools = GitTools()
-            commit_code = git_tools.gitCommit("Delete the host in {} domian, ".format(domain) +
+            commit_code = git_tools.gitCommit("Delete the host in {} domain, ".format(domain) +
                                               "the host including : {}".format(containedInHost))
         # # 根据containedInHost 停止agith服务，删除agith，删除redis key值
         Format.uninstall_hosts_agith(access_token, containedInHost, domain)
