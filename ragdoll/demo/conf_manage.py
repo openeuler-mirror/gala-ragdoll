@@ -31,7 +31,7 @@ class ConfManage(object):
                 conf = Conf(file_path=file_path_list[i], host_id=host_id_list[i])
                 conf_file.append(conf)
         else:
-            LOGGER.error("ERROR: Input error as invlid param!\n")
+            LOGGER.error("ERROR: Input error as invalid param!\n")
             return
 
         data = Confs(domain_name=domain_name, conf_files=conf_file)
