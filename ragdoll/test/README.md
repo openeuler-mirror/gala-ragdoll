@@ -1,5 +1,7 @@
 # gala-ragdoll测试框架介绍
 
+简体中文 | [English](./README_EN.md)
+
 gala-ragdoll 提供了基于flask_testing的单元测试框架，并实现了对配置溯源提供的REST API的基本功能测试。
 
 ## flask_testing 简介

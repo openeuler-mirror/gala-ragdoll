@@ -1,5 +1,7 @@
 # Introduction to gala-ragdoll
 
+English | [简体中文](./README.md)
+
 gala-ragdoll provides a unit test framework based on flask_testing and implements basic function tests on REST APIs for configuration tracing.
 
 ## flask_testing Overview
