@@ -1,0 +1,44 @@
+{
+	"Repository": {
+		"concern_syscalls": [
+			"write",
+			"clone",
+			"unlinkat",
+			"unlink",
+			"connect",
+			"sendto",
+			"recvfrom",
+			"mkdir"
+		],
+		"aops_zeus": "http://{{ ip }}/conftrace/data",
+		"conf_list": "{{ conf_list_str }}",
+		"domain_name": "{{ domain_name }}",
+		"host_id": "{{ host_id }}",
+		"log_level": "info",
+		"log_file": "/var/log/filetrace.log",
+		"log_size": 100,
+		"cluster_id": "cluster-1",
+		"skip_processes_list": [
+			"systemd",
+			"kthreadd",
+			"rcu_sched",
+			"rcu_bh",
+			"migration",
+			"watchdog",
+			"kswapd0",
+			"ksoftirqd",
+			"kworker",
+			"rcu_tasks_kthread"
+		],
+		"publish": false,
+		"ragdoll_api": "http://{{ ip }}/conftrace/data",
+		"node_name": "node1",
+		"server": "0.0.0.0",
+		"port": 8080,
+		"exporter_address": "0.0.0.0:9090",
+		"cache_data": false,
+		"cache_timeout_seconds": 30,
+		"max_dir_level": 4,
+		"max_event_queue_size": 1000
+	}
+}
