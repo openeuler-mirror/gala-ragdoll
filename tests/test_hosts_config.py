@@ -18,6 +18,11 @@ import unittest
 from ragdoll.app.config_model.hosts_config import HostsConfig
 from ragdoll.app.constant import SYNCHRONIZED, NOT_SYNCHRONIZE
 
+IP_V4 = "127.0.0.1"
+HOSTNAME_LOCAL = "localhost"
+IP_V4_ALT = "192.168.1.10"
+HOSTNAME_ALT = "myhost"
+
 
 class TestHostsConfig(unittest.TestCase):
     """Tests for HostsConfig class."""
@@ -27,29 +32,29 @@ class TestHostsConfig(unittest.TestCase):
 
     def test_parse_ipv4(self):
         """Test parsing IPv4 addresses."""
-        conf = "127.0.0.1 localhost\n192.168.1.10 myhost"
+        conf = f"{IP_V4} {HOSTNAME_LOCAL}\n{IP_V4_ALT} {HOSTNAME_ALT}"
         error, result = HostsConfig._parse_network_conf_to_dict(conf)
         self.assertFalse(error)
-        self.assertEqual(result["127.0.0.1"], "localhost")
-        self.assertEqual(result["192.168.1.10"], "myhost")
+        self.assertEqual(result[IP_V4], HOSTNAME_LOCAL)
+        self.assertEqual(result[IP_V4_ALT], HOSTNAME_ALT)
 
     def test_parse_ipv6(self):
         """Test parsing IPv6 addresses."""
-        conf = "::1 localhost"
+        conf = f"::1 {HOSTNAME_LOCAL}"
         error, result = HostsConfig._parse_network_conf_to_dict(conf)
         self.assertFalse(error)
         self.assertIn("::1", result)
 
     def test_parse_multiple_aliases(self):
         """Test parsing multiple host aliases."""
-        conf = "127.0.0.1 host1 host2 host3"
+        conf = f"{IP_V4} host1 host2 host3"
         error, result = HostsConfig._parse_network_conf_to_dict(conf)
         self.assertFalse(error)
-        self.assertEqual(result["127.0.0.1"], "host1 host2 host3")
+        self.assertEqual(result[IP_V4], "host1 host2 host3")
 
     def test_parse_skips_comments_and_empty(self):
         """Test that comments and empty lines are skipped."""
-        conf = "# comment\n\n127.0.0.1 localhost\n"
+        conf = f"# comment\n\n{IP_V4} {HOSTNAME_LOCAL}\n"
         error, result = HostsConfig._parse_network_conf_to_dict(conf)
         self.assertFalse(error)
         self.assertEqual(len(result), 1)
@@ -62,35 +67,35 @@ class TestHostsConfig(unittest.TestCase):
 
     def test_parse_error_single_field(self):
         """Test error returned for single field without hostname."""
-        conf = "127.0.0.1"
+        conf = IP_V4
         error, result = HostsConfig._parse_network_conf_to_dict(conf)
         self.assertTrue(error)
 
     def test_read_write_roundtrip(self):
         """Test read_conf and write_conf produce consistent output."""
-        conf = "127.0.0.1 localhost"
+        conf = f"{IP_V4} {HOSTNAME_LOCAL}"
         self.config.read_conf(conf)
-        self.assertEqual(self.config.conf["127.0.0.1"], "localhost")
+        self.assertEqual(self.config.conf[IP_V4], HOSTNAME_LOCAL)
         written = self.config.write_conf()
-        self.assertIn("127.0.0.1", written)
-        self.assertIn("localhost", written)
+        self.assertIn(IP_V4, written)
+        self.assertIn(HOSTNAME_LOCAL, written)
 
     def test_conf_compare_equal(self):
         """Test conf_compare returns SYNCHRONIZED for equal configs."""
-        c1 = json.dumps({"127.0.0.1": "localhost"})
-        c2 = json.dumps({"127.0.0.1": "localhost"})
+        c1 = json.dumps({IP_V4: HOSTNAME_LOCAL})
+        c2 = json.dumps({IP_V4: HOSTNAME_LOCAL})
         self.assertEqual(HostsConfig.conf_compare(c1, c2), SYNCHRONIZED)
 
     def test_conf_compare_different_value(self):
         """Test conf_compare returns NOT_SYNCHRONIZE for different values."""
-        c1 = json.dumps({"127.0.0.1": "host1"})
-        c2 = json.dumps({"127.0.0.1": "host2"})
+        c1 = json.dumps({IP_V4: "host1"})
+        c2 = json.dumps({IP_V4: "host2"})
         self.assertEqual(HostsConfig.conf_compare(c1, c2), NOT_SYNCHRONIZE)
 
     def test_conf_compare_missing_key(self):
         """Test conf_compare returns NOT_SYNCHRONIZE for missing key."""
-        c1 = json.dumps({"127.0.0.1": "localhost", "192.168.1.1": "myhost"})
-        c2 = json.dumps({"127.0.0.1": "localhost"})
+        c1 = json.dumps({IP_V4: HOSTNAME_LOCAL, "192.168.1.1": HOSTNAME_ALT})
+        c2 = json.dumps({IP_V4: HOSTNAME_LOCAL})
         self.assertEqual(HostsConfig.conf_compare(c1, c2), NOT_SYNCHRONIZE)
 
 
