@@ -30,46 +30,42 @@ class TestHostsConfig(unittest.TestCase):
     def setUp(self):
         self.config = HostsConfig()
 
-    def test_parse_ipv4(self):
-        """Test parsing IPv4 addresses."""
+    def test_read_conf_ipv4(self):
+        """Test parsing IPv4 addresses via read_conf."""
         conf = f"{IP_V4} {HOSTNAME_LOCAL}\n{IP_V4_ALT} {HOSTNAME_ALT}"
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertFalse(error)
-        self.assertEqual(result[IP_V4], HOSTNAME_LOCAL)
-        self.assertEqual(result[IP_V4_ALT], HOSTNAME_ALT)
+        self.config.read_conf(conf)
+        self.assertEqual(self.config.conf[IP_V4], HOSTNAME_LOCAL)
+        self.assertEqual(self.config.conf[IP_V4_ALT], HOSTNAME_ALT)
 
-    def test_parse_ipv6(self):
-        """Test parsing IPv6 addresses."""
+    def test_read_conf_ipv6(self):
+        """Test parsing IPv6 addresses via read_conf."""
         conf = f"::1 {HOSTNAME_LOCAL}"
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertFalse(error)
-        self.assertIn("::1", result)
+        self.config.read_conf(conf)
+        self.assertIn("::1", self.config.conf)
 
-    def test_parse_multiple_aliases(self):
-        """Test parsing multiple host aliases."""
+    def test_read_conf_multiple_aliases(self):
+        """Test parsing multiple host aliases via read_conf."""
         conf = f"{IP_V4} host1 host2 host3"
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertFalse(error)
-        self.assertEqual(result[IP_V4], "host1 host2 host3")
+        self.config.read_conf(conf)
+        self.assertEqual(self.config.conf[IP_V4], "host1 host2 host3")
 
-    def test_parse_skips_comments_and_empty(self):
-        """Test that comments and empty lines are skipped."""
+    def test_read_conf_skips_comments_and_empty(self):
+        """Test that comments and empty lines are skipped via read_conf."""
         conf = f"# comment\n\n{IP_V4} {HOSTNAME_LOCAL}\n"
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertFalse(error)
-        self.assertEqual(len(result), 1)
+        self.config.read_conf(conf)
+        self.assertEqual(len(self.config.conf), 1)
 
-    def test_parse_error_invalid_ip(self):
-        """Test error returned for invalid IP address."""
+    def test_read_conf_error_invalid_ip(self):
+        """Test invalid IP address does not store config."""
         conf = "not-an-ip hostname"
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertTrue(error)
+        self.config.read_conf(conf)
+        self.assertEqual(self.config.conf, {})
 
-    def test_parse_error_single_field(self):
-        """Test error returned for single field without hostname."""
+    def test_read_conf_error_single_field(self):
+        """Test single field without hostname does not store config."""
         conf = IP_V4
-        error, result = HostsConfig._parse_network_conf_to_dict(conf)
-        self.assertTrue(error)
+        self.config.read_conf(conf)
+        self.assertEqual(self.config.conf, {})
 
     def test_read_write_roundtrip(self):
         """Test read_conf and write_conf produce consistent output."""
