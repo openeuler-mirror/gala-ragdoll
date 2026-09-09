@@ -2,6 +2,8 @@
 
 # gala-ragdoll
 
+简体中文 | [English](./README_EN.md)
+
 #### 介绍
 gala-ragdoll是基于OS的配置托管服务，能够实现对OS配置的集群式管理，屏蔽不同OS类型的配置差异，实现统一的、可溯源的、预期配置可管理的可信的OS配置运维入口。
 

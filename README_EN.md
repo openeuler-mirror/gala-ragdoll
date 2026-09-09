@@ -2,6 +2,8 @@ English | [简体中文](./README.md)
 
 # gala-ragdoll
 
+English | [简体中文](./README.md)
+
 ## Introduction
 
 gala-ragdoll is an OS-level configuration management service. It provides a unified, traceable, and trusted OS configuration O&M portal to manage OS configurations in a cluster and masks configuration differences of various OS types.
