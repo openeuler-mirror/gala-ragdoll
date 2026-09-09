@@ -30,7 +30,7 @@ class TestGitToolsInit(unittest.TestCase):
     def test_init_with_target_dir(self, mock_load):
         """Test GitTools init with explicit target_dir."""
         tools = GitTools(target_dir=TARGET_DIR)
-        self.assertEqual(tools._target_dir, TARGET_DIR)
+        self.assertEqual(tools.target_dir, TARGET_DIR)
 
     @patch("ragdoll.app.utils.git_tools.GitTools.load_git_dir", return_value=TARGET_DIR)
     def test_init_without_target_dir(self, mock_load):
