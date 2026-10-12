@@ -1,5 +1,3 @@
-English | [简体中文](./README.md)
-
 # gala-ragdoll
 
 English | [简体中文](./README.md)
