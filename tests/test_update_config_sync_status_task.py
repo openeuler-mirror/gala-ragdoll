@@ -19,10 +19,11 @@ from unittest import mock
 from ragdoll.app.cron.update_config_sync_status_task import UpdateConfigSyncStatusTask
 from vulcanus.restful.resp.state import SUCCEED
 
-# Named constants (G.TYP.03: avoid hard-to-understand literals)
+# Named constants (G.TYP.03 / duplicate-string: avoid literals reused in a method)
 SYNC_STATUS_SYNCED = 1
 SYNC_STATUS_NOT_SYNCED = 0
 NON_SUCCEED_STATUS = 500
+DOM = "dom"
 
 
 class TestGetDomainFiles(unittest.TestCase):
@@ -30,21 +31,21 @@ class TestGetDomainFiles(unittest.TestCase):
 
     def test_collects_file_paths_per_domain(self):
         domain_paths = {}
-        expected = [{"domainName": "dom", "confBaseInfos": [{"filePath": "/a"}, {"filePath": "/b"}]}]
+        expected = [{"domainName": DOM, "confBaseInfos": [{"filePath": "/a"}, {"filePath": "/b"}]}]
         UpdateConfigSyncStatusTask.get_domain_files(domain_paths, expected)
-        self.assertEqual(domain_paths, {"dom": ["/a", "/b"]})
+        self.assertEqual(domain_paths, {DOM: ["/a", "/b"]})
 
     def test_empty_conf_base_infos(self):
         domain_paths = {}
-        expected = [{"domainName": "dom", "confBaseInfos": []}]
+        expected = [{"domainName": DOM, "confBaseInfos": []}]
         UpdateConfigSyncStatusTask.get_domain_files(domain_paths, expected)
-        self.assertEqual(domain_paths, {"dom": []})
+        self.assertEqual(domain_paths, {DOM: []})
 
     def test_missing_conf_base_infos(self):
         domain_paths = {}
-        expected = [{"domainName": "dom"}]
+        expected = [{"domainName": DOM}]
         UpdateConfigSyncStatusTask.get_domain_files(domain_paths, expected)
-        self.assertEqual(domain_paths, {"dom": []})
+        self.assertEqual(domain_paths, {DOM: []})
 
 
 class TestDealHostFileContent(unittest.TestCase):
@@ -83,13 +84,13 @@ class TestGetDomainHostIds(unittest.TestCase):
         proxy = mock.Mock()
         proxy.get_domain_host_sync_status.return_value = (
             SUCCEED, [{"host_id": "h1"}, {"host_id": "h2"}])
-        result = UpdateConfigSyncStatusTask.get_domain_host_ids([{"domainName": "dom"}], proxy)
-        self.assertEqual(result, {"dom": ["h1", "h2"]})
+        result = UpdateConfigSyncStatusTask.get_domain_host_ids([{"domainName": DOM}], proxy)
+        self.assertEqual(result, {DOM: ["h1", "h2"]})
 
     def test_skips_when_not_succeed(self):
         proxy = mock.Mock()
         proxy.get_domain_host_sync_status.return_value = (NON_SUCCEED_STATUS, [])
-        result = UpdateConfigSyncStatusTask.get_domain_host_ids([{"domainName": "dom"}], proxy)
+        result = UpdateConfigSyncStatusTask.get_domain_host_ids([{"domainName": DOM}], proxy)
         self.assertEqual(result, {})
 
 
@@ -99,19 +100,19 @@ class TestCompareConf(unittest.TestCase):
     def test_all_synced(self):
         self.assertEqual(
             self._compare("SYNCED"),
-            [{"domain_name": "dom", "host_id": "h1", "sync_status": SYNC_STATUS_SYNCED}])
+            [{"domain_name": DOM, "host_id": "h1", "sync_status": SYNC_STATUS_SYNCED}])
 
     def test_not_synced(self):
         self.assertEqual(
             self._compare("NOT SYNCHRONIZE"),
-            [{"domain_name": "dom", "host_id": "h1", "sync_status": SYNC_STATUS_NOT_SYNCED}])
+            [{"domain_name": DOM, "host_id": "h1", "sync_status": SYNC_STATUS_NOT_SYNCED}])
 
     def _compare(self, is_synced):
         with mock.patch("ragdoll.app.utils.format.Format") as m_format:
-            m_format.deal_expected_confs_resp.return_value = {"dom": {}}
-            m_format.deal_domain_result.return_value = {"dom": [{}]}
+            m_format.deal_expected_confs_resp.return_value = {DOM: {}}
+            m_format.deal_domain_result.return_value = {DOM: [{}]}
             m_format.diff_mangeconf_with_realconf_for_db.return_value = {
-                "domainName": "dom",
+                "domainName": DOM,
                 "hostStatus": [{"hostId": "h1", "syncStatus": [{"isSynced": is_synced}]}],
             }
             return UpdateConfigSyncStatusTask.compare_conf([{}], {})
