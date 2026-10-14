@@ -74,7 +74,7 @@ class TestGetNonexistentDomainHost(unittest.TestCase):
             mock_self = mock.Mock()
             dh_views.GetNonexistentDomainHost.post.__wrapped__(mock_self, cb, clusterId="c1")
         _, kwargs = mock_self.response.call_args
-        self.assertEqual(kwargs["data"], [{"host_id": "h1"}])
+        self.assertEqual(kwargs.get("data"), [{"host_id": "h1"}])
 
     def test_filters_existing_hosts(self):
         cluster_hosts = [{"host_id": "h1"}, {"host_id": "h2"}]
@@ -85,7 +85,7 @@ class TestGetNonexistentDomainHost(unittest.TestCase):
             mock_self = mock.Mock()
             dh_views.GetNonexistentDomainHost.post.__wrapped__(mock_self, cb, clusterId="c1")
         _, kwargs = mock_self.response.call_args
-        self.assertEqual(kwargs["data"], [{"host_id": "h2"}])
+        self.assertEqual(kwargs.get("data"), [{"host_id": "h2"}])
 
 
 if __name__ == "__main__":
