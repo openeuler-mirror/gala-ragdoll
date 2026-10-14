@@ -22,6 +22,9 @@ from vulcanus.restful.resp.state import (
     SUCCEED, DATABASE_INSERT_ERROR,
 )
 
+# 'aops' domain fixture, named once to satisfy the duplicate-string rule
+AOPS = "aops"
+
 
 def make_proxy():
     """Build a DomainConfInfoProxy without DB setup, with a mocked session."""
@@ -46,7 +49,7 @@ class TestAddDomainConf(unittest.TestCase):
         proxy = make_proxy()
         q = _set_domain(proxy)
         q.filter.return_value.filter.return_value.first.return_value = None  # no existing row
-        result = proxy.add_domain_conf("aops", {"/etc/hostname": "aops"})
+        result = proxy.add_domain_conf(AOPS, {"/etc/hostname": AOPS})
         self.assertEqual(result, SUCCEED)
         proxy.session.add.assert_called_once()
         proxy.session.commit.assert_called_once()
@@ -56,7 +59,7 @@ class TestAddDomainConf(unittest.TestCase):
         q = _set_domain(proxy)
         existing = mock.Mock()
         q.filter.return_value.filter.return_value.first.return_value = existing
-        result = proxy.add_domain_conf("aops", {"/etc/hostname": "new-value"})
+        result = proxy.add_domain_conf(AOPS, {"/etc/hostname": "new-value"})
         self.assertEqual(result, SUCCEED)
         proxy.session.add.assert_not_called()
         self.assertEqual(existing.conf_info, "new-value")
@@ -65,7 +68,7 @@ class TestAddDomainConf(unittest.TestCase):
     def test_db_error_returns_insert_error(self):
         proxy = make_proxy()
         proxy.session.query.side_effect = sqlalchemy.exc.SQLAlchemyError("boom")
-        result = proxy.add_domain_conf("aops", {"/etc/hostname": "aops"})
+        result = proxy.add_domain_conf(AOPS, {"/etc/hostname": AOPS})
         self.assertEqual(result, DATABASE_INSERT_ERROR)
         proxy.session.rollback.assert_called_once()
 
@@ -76,7 +79,7 @@ class TestDeleteDomainConfs(unittest.TestCase):
     def test_deletes_matching_confs(self):
         proxy = make_proxy()
         q = _set_domain(proxy)
-        result = proxy.delete_domain_confs("aops", [{"filePath": "/etc/hostname"}])
+        result = proxy.delete_domain_confs(AOPS, [{"filePath": "/etc/hostname"}])
         self.assertEqual(result, SUCCEED)
         q.filter.return_value.filter.return_value.delete.assert_called_once()
         proxy.session.commit.assert_called_once()
@@ -90,16 +93,16 @@ class TestGetDomainConfsByDomain(unittest.TestCase):
         q = _set_domain(proxy)
         conf1 = mock.Mock()
         conf1.conf_path = "/etc/hostname"
-        conf1.conf_info = "aops"
+        conf1.conf_info = AOPS
         conf2 = mock.Mock()
         conf2.conf_path = "/etc/hosts"
         conf2.conf_info = "127.0.0.1"
         q.filter.return_value.all.return_value = [conf1, conf2]
-        status, payload = proxy.get_domain_confs_by_domain("aops")
+        status, payload = proxy.get_domain_confs_by_domain(AOPS)
         self.assertEqual(status, SUCCEED)
-        self.assertEqual(payload.get("domainName"), "aops")
+        self.assertEqual(payload.get("domainName"), AOPS)
         self.assertEqual(len(payload.get("confFiles")), 2)
-        self.assertEqual(payload.get("confFiles")[0], {"filePath": "/etc/hostname", "contents": "aops"})
+        self.assertEqual(payload.get("confFiles")[0], {"filePath": "/etc/hostname", "contents": AOPS})
 
 
 if __name__ == "__main__":
