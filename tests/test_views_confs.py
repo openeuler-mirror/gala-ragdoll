@@ -17,7 +17,7 @@ import unittest
 from unittest import mock
 
 try:  # libyang is a C extension that may be absent; stub only when unavailable
-    import libyang  # noqa: F401
+    import libyang  # noqa: F401  # pylint: disable=unused-import
 except ImportError:
     sys.modules["libyang"] = mock.MagicMock()
 
