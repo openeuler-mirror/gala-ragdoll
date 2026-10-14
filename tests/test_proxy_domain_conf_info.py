@@ -97,9 +97,9 @@ class TestGetDomainConfsByDomain(unittest.TestCase):
         q.filter.return_value.all.return_value = [conf1, conf2]
         status, payload = proxy.get_domain_confs_by_domain("aops")
         self.assertEqual(status, SUCCEED)
-        self.assertEqual(payload["domainName"], "aops")
-        self.assertEqual(len(payload["confFiles"]), 2)
-        self.assertEqual(payload["confFiles"][0], {"filePath": "/etc/hostname", "contents": "aops"})
+        self.assertEqual(payload.get("domainName"), "aops")
+        self.assertEqual(len(payload.get("confFiles")), 2)
+        self.assertEqual(payload.get("confFiles")[0], {"filePath": "/etc/hostname", "contents": "aops"})
 
 
 if __name__ == "__main__":
