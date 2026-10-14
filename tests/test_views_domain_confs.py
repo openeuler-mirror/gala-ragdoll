@@ -49,7 +49,7 @@ class TestGetManagementConfsInDomain(unittest.TestCase):
             cb.get_domain_confs_by_domain.return_value = (SUCCEED, payload)
             dc_views.GetManagementConfsInDomain.post.__wrapped__(mock_self, cb, domainName="dom")
         _, kwargs = mock_self.response.call_args
-        self.assertEqual(kwargs["data"], payload)
+        self.assertEqual(kwargs.get("data"), payload)
 
     def test_conf_files_empty(self):
         with mock.patch.object(dc_views.Format, "domainCheck", return_value=True):
@@ -58,20 +58,11 @@ class TestGetManagementConfsInDomain(unittest.TestCase):
             cb.get_domain_confs_by_domain.return_value = (SUCCEED, {"domainName": "dom", "confFiles": []})
             dc_views.GetManagementConfsInDomain.post.__wrapped__(mock_self, cb, domainName="dom")
         _, kwargs = mock_self.response.call_args
-        self.assertEqual(kwargs["message"], "The file is Null in this domain")
+        self.assertEqual(kwargs.get("message"), "The file is Null in this domain")
 
 
 class TestDeleteManagementConfsInDomain(unittest.TestCase):
     """Permission / validation branches of DeleteManagementConfsInDomain.delete."""
-
-    def _run(self, role, **domain_check):
-        with mock.patch.object(dc_views, "cache") as mock_cache:
-            mock_cache.user_role = role
-            with mock.patch.object(dc_views.Format, "domainCheck", **domain_check):
-                mock_self = mock.Mock()
-                dc_views.DeleteManagementConfsInDomain.delete.__wrapped__(
-                    mock_self, mock.Mock(), domainName="dom")
-        return mock_self
 
     def test_no_user_role(self):
         mock_self = self._run(None)
@@ -86,6 +77,15 @@ class TestDeleteManagementConfsInDomain(unittest.TestCase):
     def test_invalid_domain(self):
         mock_self = self._run(UserRoleType.ADMINISTRATOR, return_value=False)
         mock_self.response.assert_called_once_with(code=PARAM_ERROR, message=_INVALID_DOMAIN_MSG)
+
+    def _run(self, role, **domain_check):
+        with mock.patch.object(dc_views, "cache") as mock_cache:
+            mock_cache.user_role = role
+            with mock.patch.object(dc_views.Format, "domainCheck", **domain_check):
+                mock_self = mock.Mock()
+                dc_views.DeleteManagementConfsInDomain.delete.__wrapped__(
+                    mock_self, mock.Mock(), domainName="dom")
+        return mock_self
 
 
 if __name__ == "__main__":
