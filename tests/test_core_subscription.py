@@ -9,6 +9,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+# pylint: disable=protected-access
 """
 Description: unit tests for ragdoll/app/core/subscription.py
 """
