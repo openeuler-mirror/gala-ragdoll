@@ -90,8 +90,8 @@ class TestQuerySupportedConfs(unittest.TestCase):
                                return_value={"conf_files": []}):
             mock_self, _ = call_post(confs_views.QuerySupportedConfs, domainName="dom")
         _, kwargs = mock_self.response.call_args
-        self.assertEqual(kwargs["code"], SUCCEED)
-        self.assertEqual(kwargs["data"], confs_views.yang_conf_list)
+        self.assertEqual(kwargs.get("code"), SUCCEED)
+        self.assertEqual(kwargs.get("data"), confs_views.yang_conf_list)
 
 
 if __name__ == "__main__":
