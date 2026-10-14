@@ -19,6 +19,9 @@ from unittest import mock
 from ragdoll.app.core.subscription import TaskCallbackSubscribe
 from vulcanus.exceptions.database_exception import DatabaseConnectionFailed
 
+# Named constant (G.TYP.03: avoid hard-to-understand literals)
+REDIS_LOCK_TTL_SECONDS = 30
+
 
 def make_subscriber(client=None):
     """Build a TaskCallbackSubscribe with a mock redis client."""
@@ -80,7 +83,7 @@ class TestClusterSynchronizeCancelTask(unittest.TestCase):
             sub._cluster_synchronize_cancel_task({"cluster_id": "c1"})
         client.set.assert_called_once_with(
             "cluster_synchronize_cancel_task_ragdoll_subscribe-c1",
-            "locked", nx=True, ex=30,
+            "locked", nx=True, ex=REDIS_LOCK_TTL_SECONDS,
         )
         proxy.cancel_synchronize_cluster.assert_called_once_with("c1")
 
@@ -116,7 +119,7 @@ class TestHostDeleteTask(unittest.TestCase):
             proxy_cls.return_value.__enter__.return_value = proxy
             sub._host_delete_task([1, 2])
         client.set.assert_called_once_with(
-            "host_delete_task_ragdoll_subscribe-[1, 2]", "locked", nx=True, ex=30
+            "host_delete_task_ragdoll_subscribe-[1, 2]", "locked", nx=True, ex=REDIS_LOCK_TTL_SECONDS
         )
         proxy.host_cancel.assert_called_once_with([1, 2])
 
