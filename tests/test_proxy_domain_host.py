@@ -80,8 +80,8 @@ class TestGetDomainHostByDomain(unittest.TestCase):
                   "per_page": 10, "page": 1}
         status, result = proxy.get_domain_host_by_domain(params)
         self.assertEqual(status, SUCCEED)
-        self.assertEqual(result["total_count"], 0)
-        self.assertEqual(result["hostlist"], [])
+        self.assertEqual(result.get("total_count"), 0)
+        self.assertEqual(result.get("hostlist"), [])
 
 
 class TestGetDomainHostByDomainIdList(unittest.TestCase):
