@@ -60,38 +60,38 @@ class TestModelBase(unittest.TestCase):
         """Plain (non-container) values are copied unchanged."""
         model = SimpleModel(name="aops", age=1)
         result = model.to_dict()
-        self.assertEqual(result["name"], "aops")
-        self.assertEqual(result["age"], 1)
+        self.assertEqual(result.get("name"), "aops")
+        self.assertEqual(result.get("age"), 1)
 
     def test_to_dict_nested_model(self):
         """A nested model value is serialized via its own to_dict."""
         model = SimpleModel(name="aops", nested=NestedModel(value=7))
         result = model.to_dict()
-        self.assertEqual(result["nested"], {"value": 7})
+        self.assertEqual(result.get("nested"), {"value": 7})
 
     def test_to_dict_list_of_models(self):
         """A list of models is serialized element by element."""
         model = SimpleModel(items=[NestedModel(1), NestedModel(2)])
         result = model.to_dict()
-        self.assertEqual(result["items"], [{"value": 1}, {"value": 2}])
+        self.assertEqual(result.get("items"), [{"value": 1}, {"value": 2}])
 
     def test_to_dict_list_of_plain(self):
         """A list of plain values keeps its elements unchanged."""
         model = SimpleModel(items=[1, 2, 3])
         result = model.to_dict()
-        self.assertEqual(result["items"], [1, 2, 3])
+        self.assertEqual(result.get("items"), [1, 2, 3])
 
     def test_to_dict_dict_of_models(self):
         """A dict whose values are models is serialized per value."""
         model = SimpleModel(mapping={"a": NestedModel(9)})
         result = model.to_dict()
-        self.assertEqual(result["mapping"], {"a": {"value": 9}})
+        self.assertEqual(result.get("mapping"), {"a": {"value": 9}})
 
     def test_to_dict_dict_of_plain(self):
         """A dict whose values are plain keeps its values unchanged."""
         model = SimpleModel(mapping={"a": 1})
         result = model.to_dict()
-        self.assertEqual(result["mapping"], {"a": 1})
+        self.assertEqual(result.get("mapping"), {"a": 1})
 
     def test_to_dict_empty_model(self):
         """A model without swagger_types serializes to an empty dict."""
