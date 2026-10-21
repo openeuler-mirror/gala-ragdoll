@@ -114,7 +114,7 @@ class DeleteDomain(BaseResponse):
         if not domainName:
             codeString = "The entered domain is empty"
             return self.response(code=PARAM_ERROR, message=codeString)
-        # 1.清理agith
+        # 1.清理gala_filetrace
         # 获取domain下的host ids
         host_ids = Format.get_hostid_list_by_domain(domainName)
         if len(host_ids) > 0:
@@ -143,7 +143,7 @@ class DeleteDomain(BaseResponse):
             if result != SUCCEED:
                 LOGGER.error(f"delete domain {domainName} error")
 
-        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行gala_filetrace的清理
         Format.clear_all_domain_data(domainName, successDomain, host_ids, params.get("domainId"))
         return self.response(code=codeNum, message=codeString)
 

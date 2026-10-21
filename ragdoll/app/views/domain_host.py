@@ -128,8 +128,8 @@ class AddHostInDomain(BaseResponse):
             if result != SUCCEED:
                 LOGGER.error(f"add domain host {filtered_host_infos} error")
 
-        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
-        Format.install_update_agith(domain, successHost)
+        # 针对successHost 添加成功的host, 安装gala_filetrace并启动gala_filetrace，如果当前业务域有配置，配置gala_filetrace，如果没有就不配置
+        Format.install_update_gala_filetrace(domain, successHost)
         return self.response(code=codeNum, message=codeString)
 
 
@@ -254,8 +254,8 @@ class DeleteHostInDomain(BaseResponse):
             if result != SUCCEED:
                 LOGGER.error(f"delete domain host {filtered_host_infos} error")
 
-        # # 根据containedInHost 停止agith服务，删除agith，删除redis key值
-        Format.uninstall_hosts_agith(containedInHost, domain)
+        # # 根据containedInHost 停止gala_filetrace服务，删除gala_filetrace，删除redis key值
+        Format.uninstall_hosts_gala_filetrace(containedInHost, domain)
         return self.response(code=codeNum, message=codeString)
 
 
