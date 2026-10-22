@@ -44,9 +44,6 @@ class AddManagementConfsInDomain(BaseResponse):
     def post(self, callback: DomainConfInfoProxy, **params):
         """
             add management configuration items and expected values in the domain
-
-            add management configuration items and expected values in the domain # noqa: E501
-
             :param body: domain info
             :type body: dict | bytes
 
@@ -68,8 +65,7 @@ class AddManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check the input "
-                                                       "parameters.")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
 
         # check whether the domain exists
         isExist = Format.isDomainExist(domain)
@@ -79,7 +75,7 @@ class AddManagementConfsInDomain(BaseResponse):
                                                        "first.")
 
         # check whether the conf_files is null
-        if len(conf_files) == 0:
+        if not conf_files or len(conf_files) == 0:
             codeNum = PARAM_ERROR
             return self.response(code=codeNum, message="The path of file can't be empty")
 
@@ -111,8 +107,7 @@ class AddManagementConfsInDomain(BaseResponse):
             for d_conf in contents_list_non_null:
                 if not d_conf["contents"].strip():
                     codeNum = PARAM_ERROR
-                    return self.response(code=codeNum, message="The input parameters are not compliant, please check "
-                                                               "the input parameters.")
+                    return self.response(code=codeNum, message="The parameters are not compliant, please check them!")
                 content_string = object_parse.parse_conf_to_json(d_conf["filePath"], d_conf["contents"])
                 if not content_string or not json.loads(content_string):
                     failedConf.append(d_conf["filePath"])
@@ -231,7 +226,7 @@ class AddManagementConfsInDomain(BaseResponse):
             if successConf and success_contents_null:
                 result = callback.add_domain_conf(domain, success_contents_null)
                 if result != SUCCEED:
-                    LOGGER.error("add domain conf error")
+                    LOGGER.error("Failed to add domain conf to DB!")
 
         # git commit message
         if len(successConf) > 0:
@@ -255,7 +250,7 @@ class AddManagementConfsInDomain(BaseResponse):
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
 
-        # 根据agith_success_conf 更新agith的配置
+        # 根据agith_success_conf 更新gala-filetrace的配置
         # 获取domain最新的有哪些配置 [1]
         conf_files_list = Format.get_conf_files_list(domain)
         if len(conf_files_list) > 0:
@@ -266,15 +261,13 @@ class AddManagementConfsInDomain(BaseResponse):
 class UploadManagementConfsInDomain(BaseResponse):
     @BaseResponse.handle(proxy=DomainConfInfoProxy)
     def post(self, callback: DomainConfInfoProxy, **params):
-        """upload management configuration items and expected values in the domain
+        """
+        upload management configuration items and expected values in the domain
+        :param body: file info
+        :type body: FileStorage
 
-            upload management configuration items and expected values in the domain # noqa: E501
-
-            :param body: file info
-            :type body: FileStorage
-
-            :rtype: BaseResponse
-            """
+        :rtype: BaseResponse
+        """
         # 判断是否是管理员
         user_role = cache.user_role
         if not user_role:
@@ -284,15 +277,14 @@ class UploadManagementConfsInDomain(BaseResponse):
             LOGGER.error("no user permission to add domain host")
             return self.response(code=PERMESSION_ERROR, message="no user permission to add domain host!")
 
-        file = request.files['file']
+        file = request.files.get('file')
         filePath = request.form.get("filePath")
         domainName = request.form.get("domainName")
         # check the input domainName
         checkRes = Format.domainCheck(domainName)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check the input "
-                                                       "parameters.")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
 
         # check whether the domainName exists
         isExist = Format.isDomainExist(domainName)
@@ -323,8 +315,7 @@ class UploadManagementConfsInDomain(BaseResponse):
         if file:
             if not filePath.strip():
                 codeNum = PARAM_ERROR
-                return self.response(code=codeNum, message="The input parameters are not compliant, please check the "
-                                                           "input parameters.")
+                return self.response(code=codeNum, message="The input parameters are not compliant, please check them!")
             try:
                 file_bytes = file.read()
                 if len(file_bytes) > 1024 * 1024:
@@ -381,7 +372,7 @@ class UploadManagementConfsInDomain(BaseResponse):
         if successConf:
             result = callback.add_domain_conf(domainName, success_file_content)
             if result != SUCCEED:
-                LOGGER.error("add domain conf error")
+                LOGGER.error("Failed to add domain conf to DB!")
 
         # 获取domain最新的有哪些配置 [1]
         conf_files_list = Format.get_conf_files_list(domainName)
@@ -393,15 +384,13 @@ class UploadManagementConfsInDomain(BaseResponse):
 class DeleteManagementConfsInDomain(BaseResponse):
     @BaseResponse.handle(schema=DeleteManagementConfsSchema, proxy=DomainConfInfoProxy)
     def delete(self, callback: DomainConfInfoProxy, **params):
-        """delete management configuration items and expected values in the domain
+        """
+        delete management configuration items and expected values in the domain
+        :param body: domain info
+        :type body: dict | bytes
 
-            delete management configuration items and expected values in the domain # noqa: E501
-
-            :param body: domain info
-            :type body: dict | bytes
-
-            :rtype: BaseResponse
-            """
+        :rtype: BaseResponse
+        """
         # 判断是否是管理员
         user_role = cache.user_role
         if not user_role:
@@ -418,8 +407,7 @@ class DeleteManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check the input "
-                                                       "parameters.")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
 
         isExist = Format.isDomainExist(domain)
         if not isExist:
@@ -428,7 +416,7 @@ class DeleteManagementConfsInDomain(BaseResponse):
 
         # Check whether path is null in advance
         conf_files = params.get("confFiles")
-        if len(conf_files) == 0:
+        if not conf_files or len(conf_files) == 0:
             codeNum = PARAM_ERROR
             return self.response(code=codeNum, message="The conf_files path can't be empty")
 
@@ -501,15 +489,13 @@ class DeleteManagementConfsInDomain(BaseResponse):
 class GetManagementConfsInDomain(BaseResponse):
     @BaseResponse.handle(schema=GetManagementConfsSchema, proxy=DomainConfInfoProxy)
     def post(self, callback: DomainConfInfoProxy, **params):
-        """get management configuration items and expected values in the domain
+        """
+        get management configuration items and expected values in the domain
+        :param body: domain info
+        :type body: dict | bytes
 
-            get management configuration items and expected values in the domain # noqa: E501
-
-            :param body: domain info
-            :type body: dict | bytes
-
-            :rtype: ConfFiles
-            """
+        :rtype: ConfFiles
+        """
         # Check whether the domain exists
         domain = params.get("domainName")
 
@@ -531,16 +517,14 @@ class GetManagementConfsInDomain(BaseResponse):
 class QueryChangelogOfManagementConfsInDomain(BaseResponse):
     @BaseResponse.handle(schema=QueryChangelogSchema, token=True)
     def post(self, **params):
-        """query the change log of management config in domain
+        """
+        query the change log of management config in domain
+        :param body: domain info
+        :type body: dict | bytes
 
-            query the change log of management config in domain # noqa: E501
-
-            :param body: domain info
-            :type body: dict | bytes
-
-            :rtype: ExceptedConfInfo
-            """
-        #  check whether the domain exists
+        :rtype: ExceptedConfInfo
+        """
+        #  get domain
         domain = params.get("domainName")
         LOGGER.debug("Query changelog of conf body is : {}".format(params))
 
@@ -548,8 +532,7 @@ class QueryChangelogOfManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check the input "
-                                                       "parameters.")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
 
         isExist = Format.isDomainExist(domain)
         if not isExist:
