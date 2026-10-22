@@ -1452,7 +1452,7 @@ class Format(object):
 
     @staticmethod
     def clear_all_domain_data(domainName, successDomain, host_ids, domain_id):
-        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行agith的清理
+        # 删除业务域，对successDomain成功的业务域进行redis的key值清理，以及domain下的主机进行gala_filetrace的清理
         if len(successDomain) > 0:
             from vulcanus.database.proxy import RedisProxy
             # 1.清理redis key值
@@ -1470,14 +1470,14 @@ class Format(object):
         return domain_conf_change
 
     @staticmethod
-    def install_update_agith(domain, host_ids):
-        # 针对successHost 添加成功的host, 安装agith并启动agith，如果当前业务域有配置，配置agith，如果没有就不配置
+    def install_update_gala_filetrace(domain, host_ids):
+        # 针对successHost 添加成功的host, 安装gala_filetrace并启动gala_filetrace，如果当前业务域有配置，配置gala_filetrace，如果没有就不配置
         install_resp_code = "200"
         # 获取domain的文件监控开关
         domain_conf_change = Format.get_conf_change_flag(domain)
         conf_files_list = Format.get_conf_files_list(domain)
         if len(host_ids) > 0 and int(domain_conf_change) == 1 and len(conf_files_list) > 0:
-            # 安装并启动agith
+            # 安装并启动gala_filetrace
             try:
                 from ragdoll.app.utils.conftrace_tools import ConfTraceTools
                 host_info_list = Format.query_host_info(host_ids)
@@ -1499,15 +1499,15 @@ class Format(object):
                 LOGGER.error(
                     "Failed to conf trace mgmt, please check the interface of /conftrace/mgmt.")
 
-            # 根据业务有是否有配置，有配置并且agith启动成功情况下进行agith的配置
+            # 根据业务有是否有配置，有配置并且gala_filetrace启动成功情况下进行gala_filetrace的配置
             if len(conf_files_list) > 0 and install_resp_code == "200":
-                Format.update_agith_conf(conf_files_list, host_ids, domain)
+                Format.update_gala_filetrace_conf(conf_files_list, host_ids, domain)
 
     @staticmethod
-    def uninstall_hosts_agith(containedInHost, domain):
-        # 根据containedInHost 停止agith服务，删除agith，删除redis key值
+    def uninstall_hosts_gala_filetrace(containedInHost, domain):
+        # 根据containedInHost 停止gala_filetrace服务，删除gala_filetrace，删除redis key值
         if len(containedInHost) > 0:
-            # 1.根据containedInHost 停止agith服务，删除agith
+            # 1.根据containedInHost 停止gala_filetrace服务，删除gala_filetrace
             from vulcanus.database.proxy import RedisProxy
             Format.uninstall_trace(containedInHost, domain)
             # 2.清理数据库数据，以避免再次添加业务域的时候还能看到以往的记录
@@ -1556,18 +1556,18 @@ class Format(object):
         return conf_files_list
 
     @staticmethod
-    def update_agith(conf_files_list, domain):
-        # 根据containedInHost,监控开关 停止agith服务，删除agith，删除redis key值
+    def update_gala_filetrace(conf_files_list, domain):
+        # 根据containedInHost,监控开关 停止gala_filetrace服务，删除gala_filetrace，删除redis key值
         domain_conf_change_flag = Format.get_conf_change_flag(domain)
         if int(domain_conf_change_flag) == 1:
             # 获取domain下的主机id
             host_ids = Format.get_hostid_list_by_domain(domain)
-            # 根据主机id和domain更新agith监控的文件
+            # 根据主机id和domain更新gala_filetrace监控的文件
             if len(host_ids) > 0:
-                Format.update_agith_conf(conf_files_list, host_ids, domain)
+                Format.update_gala_filetrace_conf(conf_files_list, host_ids, domain)
 
     @staticmethod
-    def update_agith_conf(conf_files_list, host_ids, domain_name):
+    def update_gala_filetrace_conf(conf_files_list, host_ids, domain_name):
         try:
             from ragdoll.app.utils.conftrace_tools import ConfTraceTools
             host_info_list = Format.query_host_info(host_ids)
