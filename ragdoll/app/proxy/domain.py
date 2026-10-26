@@ -249,6 +249,9 @@ class DomainProxy(MysqlProxy):
                 sync_count_data[domain_name]["sync_count"] += 1
         for key, value in sync_count_data.items():
             domain_info = self.session.query(Domain).filter(Domain.domain_name == key).first()
+            if domain_info is None:
+                LOGGER.warning("update_domain_sync_status: domain %s does not exist, skip", key)
+                continue
             # 全部同步
             if value["sync_count"] > 0 and value["no_sync_count"] == 0:
                 new_domain_data = {"domain_id": domain_info.domain_id, "sync_status": 1}
