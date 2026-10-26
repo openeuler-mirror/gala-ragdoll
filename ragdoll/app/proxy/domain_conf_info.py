@@ -21,7 +21,8 @@ from ragdoll.database import Domain, DomainConfInfo
 
 from vulcanus import LOGGER
 from vulcanus.database.proxy import MysqlProxy
-from vulcanus.restful.resp.state import SUCCEED, DATABASE_INSERT_ERROR, DATABASE_DELETE_ERROR, DATABASE_QUERY_ERROR
+from vulcanus.restful.resp.state import SUCCEED, DATABASE_INSERT_ERROR, DATABASE_DELETE_ERROR, DATABASE_QUERY_ERROR, \
+    PARAM_ERROR
 
 
 class DomainConfInfoProxy(MysqlProxy):
@@ -51,6 +52,9 @@ class DomainConfInfoProxy(MysqlProxy):
         """
         try:
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain).first()
+            if domain_info is None:
+                LOGGER.error("add domain conf fail: domain %s does not exist", domain)
+                return PARAM_ERROR
             for path, value in file_path_contents.items():
                 insert_or_update_domain_conf = DomainConfInfo(
                     domain_id=str(domain_info.domain_id),
@@ -91,6 +95,9 @@ class DomainConfInfoProxy(MysqlProxy):
         """
         try:
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+            if domain_info is None:
+                LOGGER.error("delete domain conf fail: domain %s does not exist", domain_name)
+                return PARAM_ERROR
             delete_domain_conf_list = []
             for file in domain_files:
                 delete_domain_conf_list.append(file["filePath"])
@@ -117,6 +124,9 @@ class DomainConfInfoProxy(MysqlProxy):
         expected_conf_lists = {"domainName": domain_name, "confFiles": []}
         try:
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+            if domain_info is None:
+                LOGGER.error("query domain conf fail: domain %s does not exist", domain_name)
+                return DATABASE_QUERY_ERROR, expected_conf_lists
             domain_conf_infos = self.session.query(DomainConfInfo).filter(
                 DomainConfInfo.domain_id == domain_info.domain_id).all()
             for domain_conf in domain_conf_infos:

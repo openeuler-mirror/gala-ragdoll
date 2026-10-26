@@ -138,6 +138,8 @@ class DomainHostProxy(MysqlProxy):
                 filters.add(DomainHost.domain_id.in_(domain_ids))
             else:
                 domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+                if domain_info is None:
+                    return result
                 filters.add(DomainHost.domain_id == domain_info.domain_id)
             if host_ip:
                 filters.add(func.lower(DomainHost.host_ip).like(func.lower(f'%{host_ip}%')))
