@@ -3,7 +3,7 @@ Version:	v2.1.0
 Release:	3
 Summary:	Configuration traceability
 License:	MulanPSL2
-URL:		https://gitee.com/openeuler/%{name}
+URL:		https://atomgit.com/openeuler/%{name}
 Source0:	%{name}-%{version}.tar.gz
 %global debug_package %{nil}
 
