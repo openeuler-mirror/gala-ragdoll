@@ -39,6 +39,35 @@ from vulcanus.restful.resp.state import PARAM_ERROR, SUCCEED, PARTIAL_SUCCEED, S
 from vulcanus.restful.response import BaseResponse
 
 
+def mark_db_failed(success_conf, failed_conf, attempted_confs, state):
+    """
+        Move confs handled by a failed database call from the success list to the failed list.
+
+        The expected value is written into the domain repository before the database is touched, so a
+        non-SUCCEED state from the proxy (PARAM_ERROR for a vanished domain, DATABASE_*_ERROR for a
+        database failure) leaves the repository ahead of domain_conf_info. Such confs must not be
+        reported to the caller as successes.
+
+        Args:
+            success_conf: file paths that have been written to the domain
+            failed_conf: file paths that already failed
+            attempted_confs: file paths sent to the database call that failed
+            state: state returned by the proxy
+
+        Returns:
+            tuple: (success_conf, failed_conf) with the attempted confs moved to the failed list
+    """
+    if state == SUCCEED:
+        return success_conf, failed_conf
+    failed_paths = set(attempted_confs)
+    remained_conf = [conf for conf in success_conf if conf not in failed_paths]
+    merged_conf = list(failed_conf)
+    for conf in success_conf:
+        if conf in failed_paths and conf not in merged_conf:
+            merged_conf.append(conf)
+    return remained_conf, merged_conf
+
+
 class AddManagementConfsInDomain(BaseResponse):
     @BaseResponse.handle(schema=AddManagementConfsSchema, proxy=DomainConfInfoProxy)
     def post(self, callback: DomainConfInfoProxy, **params):
@@ -97,6 +126,8 @@ class AddManagementConfsInDomain(BaseResponse):
 
         successConf = []
         failedConf = []
+        # 落库失败时的返回码，SUCCEED 表示待落库的配置项均已写入数据库
+        db_state = SUCCEED
         object_parse = ObjectParse()
         yang_module = YangModule()
         conf_tools = ConfTools()
@@ -125,7 +156,11 @@ class AddManagementConfsInDomain(BaseResponse):
             if successConf and success_contents_not_null:
                 result = callback.add_domain_conf(domain, success_contents_not_null)
                 if result != SUCCEED:
-                    LOGGER.error("add domain conf error")
+                    # 落库失败时仓库已写入但表里没有记录，这些配置项不能算成功
+                    LOGGER.error("Failed to add domain conf to DB! state: {}, domain: {}".format(result, domain))
+                    successConf, failedConf = mark_db_failed(successConf, failedConf,
+                                                             success_contents_not_null, result)
+                    db_state = result
 
         # content is empty
         if len(contents_list_null) > 0:
@@ -226,7 +261,11 @@ class AddManagementConfsInDomain(BaseResponse):
             if successConf and success_contents_null:
                 result = callback.add_domain_conf(domain, success_contents_null)
                 if result != SUCCEED:
-                    LOGGER.error("Failed to add domain conf to DB!")
+                    # 落库失败时仓库已写入但表里没有记录，这些配置项不能算成功
+                    LOGGER.error("Failed to add domain conf to DB! state: {}, domain: {}".format(result, domain))
+                    successConf, failedConf = mark_db_failed(successConf, failedConf,
+                                                             success_contents_null, result)
+                    db_state = result
 
         # git commit message
         if len(successConf) > 0:
@@ -241,14 +280,17 @@ class AddManagementConfsInDomain(BaseResponse):
         LOGGER.debug("successConf is : {}".format(successConf))
         LOGGER.debug("failedConf is : {}".format(failedConf))
         if len(successConf) == 0:
-            codeNum = PARAM_ERROR
+            # 全部失败：落库失败时返回数据库状态，不能把未落库的配置报成普通的参数错误
+            codeNum = db_state if db_state != SUCCEED else PARAM_ERROR
             codeString = "All configurations failed to be added."
-        elif len(failedConf) > 0:
+        elif len(failedConf) > 0 or db_state != SUCCEED:
             codeNum = PARTIAL_SUCCEED
             codeString = Format.splicErrorString("confs", "add management conf", successConf, failedConf)
         else:
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
+        if db_state != SUCCEED:
+            codeString += " The failed configurations were not saved to the database, state: {}.".format(db_state)
 
         # 根据agith_success_conf 更新gala-filetrace的配置
         # 获取domain最新的有哪些配置 [1]
@@ -305,6 +347,8 @@ class UploadManagementConfsInDomain(BaseResponse):
 
         successConf = []
         failedConf = []
+        # 落库失败时的返回码，SUCCEED 表示待落库的配置项均已写入数据库
+        db_state = SUCCEED
         object_parse = ObjectParse()
         yang_module = YangModule()
         conf_tools = ConfTools()
@@ -356,23 +400,30 @@ class UploadManagementConfsInDomain(BaseResponse):
             commit_code = git_tools.gitCommit("Add the conf in {} domain, ".format(domainName) +
                                               "the path including : {}".format(succ_conf))
 
+        # 将success_file_content数据存储到表domain_conf_info
+        if successConf:
+            result = callback.add_domain_conf(domainName, success_file_content)
+            if result != SUCCEED:
+                # 落库失败时仓库已写入但表里没有记录，这些配置项不能算成功
+                LOGGER.error("Failed to add domain conf to DB! state: {}, domain: {}".format(result, domainName))
+                successConf, failedConf = mark_db_failed(successConf, failedConf, success_file_content, result)
+                db_state = result
+
         # Joinin together the returned codenum and codeMessage
         LOGGER.debug("successConf is : {}".format(successConf))
         LOGGER.debug("failedConf is : {}".format(failedConf))
         if len(successConf) == 0:
-            codeNum = PARAM_ERROR
+            # 全部失败：落库失败时返回数据库状态，不能把未落库的配置报成普通的参数错误
+            codeNum = db_state if db_state != SUCCEED else PARAM_ERROR
             codeString = "All configurations failed to be added."
-        elif len(failedConf) > 0:
+        elif len(failedConf) > 0 or db_state != SUCCEED:
             codeNum = PARTIAL_SUCCEED
             codeString = Format.splicErrorString("confs", "add management conf", successConf, failedConf)
         else:
             codeNum = SUCCEED
             codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
-        # 将success_file_content数据存储到表domain_conf_info
-        if successConf:
-            result = callback.add_domain_conf(domainName, success_file_content)
-            if result != SUCCEED:
-                LOGGER.error("Failed to add domain conf to DB!")
+        if db_state != SUCCEED:
+            codeString += " The failed configurations were not saved to the database, state: {}.".format(db_state)
 
         # 获取domain最新的有哪些配置 [1]
         conf_files_list = Format.get_conf_files_list(domainName)
@@ -423,6 +474,8 @@ class DeleteManagementConfsInDomain(BaseResponse):
         # Conf to record successes and failures
         successConf = []
         failedConf = []
+        # 数据库删除失败时的返回码，SUCCEED 表示待删除的记录均已从表中删除
+        db_state = SUCCEED
 
         # Check whether path exists in the domain. There are two possible paths :
         # (1)xpath path
@@ -463,22 +516,30 @@ class DeleteManagementConfsInDomain(BaseResponse):
             commit_code = git_tools.gitCommit("delete the conf in {} domain, ".format(domain) +
                                               "the path including : {}".format(succ_conf))
 
-        # Joinin together the returned codenum and codeMessage
-        if len(failedConf) == 0:
-            codeNum = SUCCEED
-            codeString = Format.spliceAllSuccString("confs", "delete management conf", successConf)
-        else:
-            codeNum = PARAM_ERROR
-            codeString = Format.splicErrorString("confs", "delete management conf", successConf, failedConf)
-            codeString += "\n The reason for the failure is: these paths do not exist."
-
         # 将删除成功的file从数据库中删除
         if successConf:
             # 过滤出从文件中删除成功的host
             filtered_domain_files = [conf_file for conf_file in conf_files if conf_file.get("filePath") in successConf]
             result = callback.delete_domain_confs(domain, filtered_domain_files)
             if result != SUCCEED:
-                LOGGER.error(f"delete domain info {filtered_domain_files} error")
+                # 文件已删除但表里的记录还在，这些配置项不能算删除成功
+                LOGGER.error(f"Failed to delete domain conf {filtered_domain_files} from DB! state: {result}")
+                failed_paths = [conf_file["filePath"] for conf_file in filtered_domain_files]
+                successConf, failedConf = mark_db_failed(successConf, failedConf, failed_paths, result)
+                db_state = result
+
+        # Joinin together the returned codenum and codeMessage
+        if db_state != SUCCEED:
+            codeNum = db_state if len(successConf) == 0 else PARAM_ERROR
+            codeString = Format.splicErrorString("confs", "delete management conf", successConf, failedConf)
+            codeString += "\n The reason for the failure is: the database record of these paths was not deleted."
+        elif len(failedConf) == 0:
+            codeNum = SUCCEED
+            codeString = Format.spliceAllSuccString("confs", "delete management conf", successConf)
+        else:
+            codeNum = PARAM_ERROR
+            codeString = Format.splicErrorString("confs", "delete management conf", successConf, failedConf)
+            codeString += "\n The reason for the failure is: these paths do not exist."
 
         # 获取domain最新的有哪些配置 [1]
         conf_files_list = Format.get_conf_files_list(domain)

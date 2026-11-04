@@ -2,9 +2,6 @@
 
 from __future__ import absolute_import
 
-from datetime import date, datetime  # noqa: F401
-from typing import List, Dict  # noqa: F401
-
 from ragdoll.app import util
 from ragdoll.app.models.base_model_ import Model
 
@@ -15,12 +12,12 @@ class ConfFile(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, file_path: str = None, contents: str = None):  # noqa: E501
+    def __init__(self, file_path: str = None, contents: str = None):
         """ConfFile - a model defined in Swagger
 
-        :param file_path: The file_path of this ConfFile.  # noqa: E501
+        :param file_path: The file_path of this ConfFile.
         :type file_path: str
-        :param contents: The contents of this ConfFile.  # noqa: E501
+        :param contents: The contents of this ConfFile.
         :type contents: str
         """
         self.swagger_types = {
@@ -42,7 +39,7 @@ class ConfFile(Model):
 
         :param dikt: A dict.
         :type: dict
-        :return: The ConfFile of this ConfFile.  # noqa: E501
+        :return: The ConfFile object built from the dict.
         :rtype: ConfFile
         """
         return util.deserialize_model(dikt, cls)
@@ -51,7 +48,7 @@ class ConfFile(Model):
     def file_path(self) -> str:
         """Gets the file_path of this ConfFile.
 
-        the path of a configuration file  # noqa: E501
+        the path of a configuration file
 
         :return: The file_path of this ConfFile.
         :rtype: str
@@ -62,7 +59,7 @@ class ConfFile(Model):
     def file_path(self, file_path: str):
         """Sets the file_path of this ConfFile.
 
-        the path of a configuration file  # noqa: E501
+        the path of a configuration file
 
         :param file_path: The file_path of this ConfFile.
         :type file_path: str
@@ -74,7 +71,7 @@ class ConfFile(Model):
     def contents(self) -> str:
         """Gets the contents of this ConfFile.
 
-        the contents of the configuration file  # noqa: E501
+        the contents of the configuration file
 
         :return: The contents of this ConfFile.
         :rtype: str
@@ -85,7 +82,7 @@ class ConfFile(Model):
     def contents(self, contents: str):
         """Sets the contents of this ConfFile.
 
-        the contents of the configuration file  # noqa: E501
+        the contents of the configuration file
 
         :param contents: The contents of this ConfFile.
         :type contents: str

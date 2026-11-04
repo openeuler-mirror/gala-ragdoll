@@ -48,7 +48,8 @@ class DomainConfInfoProxy(MysqlProxy):
                         "/etc/hostname": "aops"
                     }
             Returns:
-                str: SUCCEED or DATABASE_INSERT_ERROR or PARAM_ERROR
+                str: SUCCEED or DATABASE_INSERT_ERROR or PARAM_ERROR. PARAM_ERROR means the domain does
+                not exist and nothing was written: callers must not report the confs as saved.
         """
         try:
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain).first()
@@ -91,7 +92,8 @@ class DomainConfInfoProxy(MysqlProxy):
                 ]
 
             Returns:
-                str
+                str: SUCCEED or DATABASE_DELETE_ERROR or PARAM_ERROR. PARAM_ERROR means the domain does
+                not exist and nothing was deleted: callers must not report the confs as deleted.
         """
         try:
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
