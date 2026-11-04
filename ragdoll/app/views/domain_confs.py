@@ -524,9 +524,8 @@ class DeleteManagementConfsInDomain(BaseResponse):
             if result != SUCCEED:
                 # 文件已删除但表里的记录还在，这些配置项不能算删除成功
                 LOGGER.error(f"Failed to delete domain conf {filtered_domain_files} from DB! state: {result}")
-                successConf, failedConf = mark_db_failed(successConf, failedConf,
-                                                         [conf_file["filePath"] for conf_file in
-                                                          filtered_domain_files], result)
+                failed_paths = [conf_file["filePath"] for conf_file in filtered_domain_files]
+                successConf, failedConf = mark_db_failed(successConf, failedConf, failed_paths, result)
                 db_state = result
 
         # Joinin together the returned codenum and codeMessage
