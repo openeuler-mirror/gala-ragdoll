@@ -116,13 +116,19 @@ class DomainHostProxy(MysqlProxy):
             LOGGER.error("delete domain %s fail", hostInfos)
             return DATABASE_DELETE_ERROR
 
-    def get_domain_host_by_domain(self, params: dict):
+    def get_domain_host_by_domain(self, params: dict) -> tuple:
         """
            get domain host from table
 
         params:
             host_ip (str): 127.0.0.1
             domain_name (str): test
+
+        Returns:
+            tuple: (state, result), e.g. (SUCCEED, {"total_count": 0,
+            "total_page": 0, "hostlist": []}) or (DATABASE_QUERY_ERROR,
+            result). Every branch returns this pair -- callers unpack it
+            (see views/domain_host.py), so a bare dict is not an option.
         """
         result = {"total_count": 0, "total_page": 0, "hostlist": []}
         hostlist = []
@@ -138,6 +144,10 @@ class DomainHostProxy(MysqlProxy):
                 filters.add(DomainHost.domain_id.in_(domain_ids))
             else:
                 domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+                if domain_info is None:
+                    # a nonexistent domain simply has no hosts: keep the
+                    # (state, data) contract the caller unpacks
+                    return SUCCEED, result
                 filters.add(DomainHost.domain_id == domain_info.domain_id)
             if host_ip:
                 filters.add(func.lower(DomainHost.host_ip).like(func.lower(f'%{host_ip}%')))

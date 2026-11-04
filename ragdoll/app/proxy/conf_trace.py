@@ -29,7 +29,7 @@ from sqlalchemy import desc, asc, func
 from ragdoll.app import TARGETDIR, cache
 from vulcanus import LOGGER
 from vulcanus.restful.resp.state import SUCCEED, DATABASE_DELETE_ERROR, NO_DATA, UNKNOWN_ERROR, DATABASE_INSERT_ERROR, \
-    DATABASE_QUERY_ERROR
+    DATABASE_QUERY_ERROR, PARAM_ERROR
 
 from ragdoll.database import Domain, DomainHost, DomainConfInfo, HostConfSyncStatus, ConfTraceInfo
 from vulcanus.database.proxy import MysqlProxy
@@ -162,10 +162,14 @@ class ConfTraceProxy(MysqlProxy):
 
             # 查询domain属于那个集群
             domain_info = self.session.query(Domain).filter(Domain.domain_name == domain_name).first()
+            if domain_info is None:
+                return PARAM_ERROR
             cluster_info = cache.clusters
             cluster_name = cluster_info.get(domain_info.cluster_id, {}).get("cluster_name")
             # 根据host_id 查询host_ip
             domain_host = self.session.query(DomainHost).filter(DomainHost.host_id == host_id).first()
+            if domain_host is None:
+                return PARAM_ERROR
             host_ip = domain_host.host_ip
             # 根据内容拼接配置变更信息
             info_str = f"user:{data.get('user')} process:{data.get('cmd')} modified the file:{data.get('file')}"
