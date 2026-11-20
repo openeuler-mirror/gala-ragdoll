@@ -50,6 +50,10 @@ ipv6 = re.compile('^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|'
 
 class HostsConfig(BaseHandlerConfig):
 
+    def __init__(self):
+        super().__init__()
+        self.conf = {}
+
     @staticmethod
     def _parse_network_conf_to_dict(conf_info):
 
