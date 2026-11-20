@@ -82,6 +82,8 @@ class ConfTools(object):
             path = d_conf.get(PATH)
             value = d_conf.get(EXCEPTED_VALUE).strip()
             level = path.split("/")
+            if level and level[0] == "":
+                level = level[1:]
             d_res0 = {}
             d_res0[level[len(level) - 1]] = value
 
@@ -119,7 +121,7 @@ class ConfTools(object):
         d_real_file[featureList[1]] = realConfDict
         d_real_feature = {}
         d_real_feature[featureList[0]] = d_real_file
-        realConfWithFeature[domainName] = d_real_feature
+        realConfWithFeature[featureList[2]] = {domainName: d_real_feature}
         return realConfWithFeature
 
     def realConfToExpectDict(self, realConfResText):
