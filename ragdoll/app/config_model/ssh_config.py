@@ -26,6 +26,11 @@ SPACER_LIST = [' ', '\t']
 
 class SshConfig(BaseHandlerConfig):
 
+    def __init__(self):
+        super().__init__()
+        self.conf = {}
+        self.yang = {}
+
     def parse_conf_to_dict(self, conf_info):
         """
         将配置信息conf_info转为list，但是并未校验配置项是否合法
