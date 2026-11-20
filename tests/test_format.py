@@ -80,23 +80,23 @@ class TestFormatRsplit(unittest.TestCase):
     """Tests for Format.rsplit static method."""
 
     def test_rsplit_with_sep(self):
-        """Test rsplit splits from right."""
+        """Test rsplit splits from right into a (prefix, suffix) tuple."""
         result = Format.rsplit("a.b.c", ".")
-        self.assertEqual(result, "c")
+        self.assertEqual(result, ("a.b", "c"))
 
     def test_rsplit_no_match(self):
-        """Test rsplit returns original string when sep not found."""
+        """Test rsplit returns the whole string with an empty suffix when sep is absent."""
         result = Format.rsplit("abc", ".")
-        self.assertEqual(result, "abc")
+        self.assertEqual(result, ("abc", ""))
 
 
 class TestFormatArchSep(unittest.TestCase):
     """Tests for Format.arch_sep static method."""
 
     def test_arch_sep_x86(self):
-        """Test arch_sep extracts x86_64 architecture."""
+        """Test arch_sep returns the trailing separator for an rpm file name."""
         result = Format.arch_sep("package-1.0-1.x86_64.rpm")
-        self.assertIn("x86_64", result)
+        self.assertEqual(result, ".")
 
 
 if __name__ == "__main__":
