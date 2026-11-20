@@ -94,7 +94,8 @@ class AddManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check " \
+                                                       "the input parameters.")
 
         # check whether the domain exists
         isExist = Format.isDomainExist(domain)
@@ -326,7 +327,8 @@ class UploadManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domainName)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check " \
+                                                       "the input parameters.")
 
         # check whether the domainName exists
         isExist = Format.isDomainExist(domainName)
@@ -458,7 +460,8 @@ class DeleteManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check " \
+                                                       "the input parameters.")
 
         isExist = Format.isDomainExist(domain)
         if not isExist:
@@ -593,7 +596,8 @@ class QueryChangelogOfManagementConfsInDomain(BaseResponse):
         checkRes = Format.domainCheck(domain)
         if not checkRes:
             codeNum = PARAM_ERROR
-            return self.response(code=codeNum, message="Failed to verify the input parameter, please check them!")
+            return self.response(code=codeNum, message="Failed to verify the input parameter, please check " \
+                                                       "the input parameters.")
 
         isExist = Format.isDomainExist(domain)
         if not isExist:
