@@ -19,7 +19,7 @@ class GitTools(object):
 
     @property
     def target_dir(self):
-        return self.load_git_dir()
+        return self._target_dir
 
     @target_dir.setter
     def target_dir(self, target_dir):
@@ -96,8 +96,8 @@ class GitTools(object):
         gitLogMessageList = []
         singleLogLen = 6
         # the count is num of message
-        count = logMessage.count("commit")
         lines = logMessage.split('\n')
+        count = sum(1 for line in lines if line.startswith("commit "))
 
         LOGGER.debug("count is : {}".format(count))
         for index in range(0, count):
@@ -105,7 +105,7 @@ class GitTools(object):
             for temp in range(0, singleLogLen):
                 line = lines[index * singleLogLen + temp]
                 value = line.split(" ", 1)[-1]
-                if "commit" in line:
+                if line.startswith("commit "):
                     gitMessage["changeId"] = value
                 if "Author" in line:
                     gitMessage["author"] = value
