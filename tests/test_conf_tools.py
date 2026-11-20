@@ -90,11 +90,23 @@ class TestConfTools(unittest.TestCase):
         self.assertEqual(self.tools.target_dir, "/tmp/test")
 
     def test_add_feature_in_real_conf(self):
-        """Test addFeatureInRealConf adds feature to real config."""
+        """Test addFeatureInRealConf nests feature info under the domain."""
         real_conf = {"/etc/hosts": "content"}
-        feature_list = ["hosts", "/etc/hosts", "hosts_file"]
+        feature_list = ["hosts", "hosts.conf"]  # getFeatureInModule yields 2 items
         result = self.tools.addFeatureInRealConf(real_conf, feature_list, "test_domain")
-        self.assertIn("hosts_file", result)
+        self.assertIn("test_domain", result)
+        self.assertIn("hosts", result["test_domain"])
+        self.assertEqual(result["test_domain"]["hosts"]["hosts.conf"], real_conf)
+
+    def test_add_feature_short_list_no_index_error(self):
+        """A short feature list must not raise IndexError."""
+        self.assertEqual(self.tools.addFeatureInRealConf({}, [], "d"), {})
+        self.assertIn("d", self.tools.addFeatureInRealConf({}, ["f"], "d"))
+
+    def test_list_to_dict_empty_path(self):
+        """An empty path must not crash on an empty level list."""
+        result = self.tools.listToDict([{CONF_PATH: "", CONF_VALUE: "val"}])
+        self.assertIn("", result)
 
 
 if __name__ == "__main__":
