@@ -63,7 +63,18 @@ class TestSshConfig(unittest.TestCase):
 
     def test_read_conf_error_not_stored(self):
         conf = "  indented"
-        self.config.read_conf(conf)
+        self.assertFalse(self.config.read_conf(conf))
+        self.assertEqual(self.config.conf, {})
+        self.assertFalse(self.config.conf_valid)
+
+    def test_read_conf_success_sets_valid(self):
+        self.assertTrue(self.config.read_conf("Port 22"))
+        self.assertTrue(self.config.conf_valid)
+
+    def test_read_conf_all_comments_no_crash(self):
+        """An all-comment input is a failed parse, not an IndexError."""
+        self.assertFalse(self.config.read_conf("# only a comment\n\n"))
+        self.assertFalse(self.config.conf_valid)
         self.assertEqual(self.config.conf, {})
 
     # --- write_conf ---

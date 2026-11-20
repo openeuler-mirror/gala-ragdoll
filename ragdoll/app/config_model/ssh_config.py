@@ -30,6 +30,9 @@ class SshConfig(BaseHandlerConfig):
         super().__init__()
         self.conf = {}
         self.yang = {}
+        # Distinguishes a legitimately empty config from a failed parse; an
+        # invalid state must never be persisted or pushed down to the host.
+        self.conf_valid = False
 
     def parse_conf_to_dict(self, conf_info):
         """
@@ -45,6 +48,10 @@ class SshConfig(BaseHandlerConfig):
                 continue
             handle_content_list.append(raw_line)  # remove empty line & comment line
 
+        if not handle_content_list:
+            # All lines were empty or comments: nothing valid to parse.
+            error_conf = True
+            return error_conf, result_dict
         if handle_content_list[0][0] in SPACER_LIST:
             error_conf = True
             return error_conf, result_dict
@@ -123,9 +130,19 @@ class SshConfig(BaseHandlerConfig):
             self.yang[section][option] = None
 
     def read_conf(self, conf_info):
+        """Parse conf_info into self.conf.
+
+        Returns True on success and False on a parse error; the error is also
+        reflected by `conf_valid` so callers can refuse to persist/push an
+        empty state that resulted from a failed parse.
+        """
         error_conf, conf_dict_list = self.parse_conf_to_dict(conf_info)
-        if error_conf is False:
-            self.conf = conf_dict_list
+        if error_conf is True:
+            self.conf_valid = False
+            return False
+        self.conf = conf_dict_list
+        self.conf_valid = True
+        return True
 
     def write_conf(self):
         content = ""
