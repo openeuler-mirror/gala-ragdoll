@@ -224,6 +224,7 @@ class Format(object):
         for idx, ch in enumerate(reversed(_str)):
             if ch in seps:
                 return _str[0:-idx - 1], _str[-idx:]
+        return _str, ""
 
     @staticmethod
     def arch_sep(package_string):
