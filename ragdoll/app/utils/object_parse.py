@@ -96,8 +96,11 @@ class ObjectParse(object):
             parsed = conf_model.read_conf(conf_info, spacer_type, yang_info)
         else:
             parsed = conf_model.read_conf(conf_info)
-        if parsed is False:
-            return ""
+        if parsed is False or getattr(conf_model, "conf_valid", True) is False:
+            # Emit valid empty JSON: the push-down path still blocks it
+            # (`not json.loads("{}")` is True), while read-only consumers
+            # (format.py/conf_tools.py json.loads) no longer crash.
+            return "{}"
 
         # to json
         conf_json = self.parse_model_to_json(conf_model)
@@ -121,8 +124,11 @@ class ObjectParse(object):
 
         # load conf info; a failed parse must not be emitted as empty content.
         parsed = conf_model.read_conf(conf_info)
-        if parsed is False:
-            return ""
+        if parsed is False or getattr(conf_model, "conf_valid", True) is False:
+            # Emit valid empty JSON: the push-down path still blocks it
+            # (`not json.loads("{}")` is True), while read-only consumers
+            # (format.py/conf_tools.py json.loads) no longer crash.
+            return "{}"
         # to json
         conf_json = self.parse_model_to_json(conf_model)
         return conf_json
@@ -144,8 +150,11 @@ class ObjectParse(object):
 
         # load conf info; a failed parse must not be emitted as empty content.
         parsed = conf_model.read_conf(res_infos)
-        if parsed is False:
-            return ""
+        if parsed is False or getattr(conf_model, "conf_valid", True) is False:
+            # Emit valid empty JSON: the push-down path still blocks it
+            # (`not json.loads("{}")` is True), while read-only consumers
+            # (format.py/conf_tools.py json.loads) no longer crash.
+            return "{}"
         # to json
         conf_json = self.parse_model_to_json(conf_model)
         return conf_json

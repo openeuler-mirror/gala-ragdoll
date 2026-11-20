@@ -96,8 +96,24 @@ class TestParseEarlyReturns(unittest.TestCase):
         parser._yang_modules.getTypeInModdule.return_value = {"ssh": "other"}
         config = mock.Mock()
         config.read_conf.return_value = False  # explicit parse failure
+        config.conf_valid = False
         parser.create_conf_model_by_type = mock.Mock(return_value=config)
-        self.assertEqual(parser.parse_conf_to_json("/etc/ssh/ssh_config", "bad"), "")
+        # "{}" is valid JSON: push-down blocks it, read-only consumers do not crash.
+        self.assertEqual(parser.parse_conf_to_json("/etc/ssh/ssh_config", "bad"), "{}")
+
+    def test_invalid_conf_valid_is_not_emitted(self):
+        """conf_valid=False is consumed even if read_conf reports success."""
+        parser = make_parser()
+        parser._yang_modules = mock.Mock()
+        yang = mock.Mock()
+        yang.name.return_value = "ssh"
+        parser._yang_modules.getModuleByFilePath.return_value = yang
+        parser._yang_modules.getTypeInModdule.return_value = {"ssh": "other"}
+        config = mock.Mock()
+        config.read_conf.return_value = True
+        config.conf_valid = False  # inconsistent but must fail closed
+        parser.create_conf_model_by_type = mock.Mock(return_value=config)
+        self.assertEqual(parser.parse_conf_to_json("/etc/ssh/ssh_config", "bad"), "{}")
 
 
 if __name__ == "__main__":
