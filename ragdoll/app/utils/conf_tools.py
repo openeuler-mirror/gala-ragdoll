@@ -82,7 +82,10 @@ class ConfTools(object):
             path = d_conf.get(PATH)
             value = d_conf.get(EXCEPTED_VALUE).strip()
             level = path.split("/")
-            if level and level[0] == "":
+            # Strip the leading empty component of an absolute path only when
+            # other components remain. For path == "" this would leave an
+            # empty list and break the level[-1] access below.
+            if len(level) > 1 and level[0] == "":
                 level = level[1:]
             d_res0 = {}
             d_res0[level[len(level) - 1]] = value
@@ -117,11 +120,18 @@ class ConfTools(object):
         """
         realConfWithFeature = {}
         LOGGER.debug("featureList is : {}".format(featureList))
+        # getFeatureInModule() yields at most two elements: the first-level
+        # feature and the config file name. Guard short lists so this helper
+        # never raises IndexError on a partial feature path.
+        if not featureList:
+            return realConfWithFeature
         d_real_file = {}
-        d_real_file[featureList[1]] = realConfDict
+        d_real_file[featureList[1] if len(featureList) > 1 else ""] = realConfDict
         d_real_feature = {}
         d_real_feature[featureList[0]] = d_real_file
-        realConfWithFeature[featureList[2]] = {domainName: d_real_feature}
+        # Preserve the domain-first (domain/feature/conf) layout used by
+        # realConfToConfContents and realConfToExpectDict.
+        realConfWithFeature[domainName] = d_real_feature
         return realConfWithFeature
 
     def realConfToExpectDict(self, realConfResText):
