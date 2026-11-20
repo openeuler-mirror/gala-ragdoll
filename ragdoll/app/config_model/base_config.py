@@ -59,8 +59,10 @@ class BaseConfig(object):
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
 
-        for src_list, dst_list in zip(sorted(src_conf_dict), sorted(dst_conf_dict)):
-            if str(src_conf_dict[src_list]) != str(dst_conf_dict[dst_list]):
+        if sorted(src_conf_dict) != sorted(dst_conf_dict):
+            return NOT_SYNCHRONIZE
+        for key in sorted(src_conf_dict):
+            if str(src_conf_dict[key]) != str(dst_conf_dict[key]):
                 res = NOT_SYNCHRONIZE
                 break
         return res
