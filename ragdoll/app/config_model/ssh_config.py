@@ -139,6 +139,7 @@ class SshConfig(BaseHandlerConfig):
         error_conf, conf_dict_list = self.parse_conf_to_dict(conf_info)
         if error_conf is True:
             self.conf_valid = False
+            self.conf = {}
             return False
         self.conf = conf_dict_list
         self.conf_valid = True

@@ -89,12 +89,15 @@ class ObjectParse(object):
         yang_info = self._yang_modules.getModuleByFilePath(conf_path)
         conf_model.load_yang_model(yang_info)
 
-        # load conf info
+        # load conf info; a failed parse must not be emitted as empty content
+        # that downstream would persist / push to the host.
         if conf_type == "kv":
             spacer_type = self._yang_modules.getSpacerInModdule([yang_info])
-            conf_model.read_conf(conf_info, spacer_type, yang_info)
+            parsed = conf_model.read_conf(conf_info, spacer_type, yang_info)
         else:
-            conf_model.read_conf(conf_info)
+            parsed = conf_model.read_conf(conf_info)
+        if parsed is False:
+            return ""
 
         # to json
         conf_json = self.parse_model_to_json(conf_model)
@@ -116,8 +119,10 @@ class ObjectParse(object):
         yang_info = self._yang_modules.getModuleByFilePath(directory_path)
         conf_model.load_yang_model(yang_info)
 
-        # load conf info
-        conf_model.read_conf(conf_info)
+        # load conf info; a failed parse must not be emitted as empty content.
+        parsed = conf_model.read_conf(conf_info)
+        if parsed is False:
+            return ""
         # to json
         conf_json = self.parse_model_to_json(conf_model)
         return conf_json
@@ -137,8 +142,10 @@ class ObjectParse(object):
         yang_info = self._yang_modules.getModuleByFilePath(dir_path)
         conf_model.load_yang_model(yang_info)
 
-        # load conf info
-        conf_model.read_conf(res_infos)
+        # load conf info; a failed parse must not be emitted as empty content.
+        parsed = conf_model.read_conf(res_infos)
+        if parsed is False:
+            return ""
         # to json
         conf_json = self.parse_model_to_json(conf_model)
         return conf_json

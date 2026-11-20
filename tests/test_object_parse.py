@@ -86,6 +86,19 @@ class TestParseEarlyReturns(unittest.TestCase):
     def test_parse_directory_single_conf_to_json(self):
         self.assertEqual(self.parser.parse_directory_single_conf_to_json("content", "/no/such/path"), "")
 
+    def test_failed_read_conf_is_not_emitted(self):
+        """A read_conf failure yields empty output so downstream refuses to persist it."""
+        parser = make_parser()
+        parser._yang_modules = mock.Mock()
+        yang = mock.Mock()
+        yang.name.return_value = "ssh"
+        parser._yang_modules.getModuleByFilePath.return_value = yang
+        parser._yang_modules.getTypeInModdule.return_value = {"ssh": "other"}
+        config = mock.Mock()
+        config.read_conf.return_value = False  # explicit parse failure
+        parser.create_conf_model_by_type = mock.Mock(return_value=config)
+        self.assertEqual(parser.parse_conf_to_json("/etc/ssh/ssh_config", "bad"), "")
+
 
 if __name__ == "__main__":
     unittest.main()

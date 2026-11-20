@@ -71,6 +71,13 @@ class TestSshConfig(unittest.TestCase):
         self.assertTrue(self.config.read_conf("Port 22"))
         self.assertTrue(self.config.conf_valid)
 
+    def test_read_conf_failure_clears_previous_conf(self):
+        """A failed re-parse must not leave a stale conf behind."""
+        self.assertTrue(self.config.read_conf("Port 22"))
+        self.assertEqual(self.config.conf, {"Port": "22"})
+        self.assertFalse(self.config.read_conf("  indented"))
+        self.assertEqual(self.config.conf, {})
+
     def test_read_conf_all_comments_no_crash(self):
         """An all-comment input is a failed parse, not an IndexError."""
         self.assertFalse(self.config.read_conf("# only a comment\n\n"))
