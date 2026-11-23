@@ -28,18 +28,21 @@ class KvConfig(BaseHandlerConfig):
 
         conf_list = conf_info.strip().splitlines()
         for line in conf_list:
-            if line is None or line.strip() == '' or line.strip()[0] in '#':
+            stripped = line.strip()
+            if not stripped or stripped[0] == '#':
                 continue
-            re_domain = re.split("\s+", line)
+            re_domain = re.split(r"\s+", stripped)
             if space_type[str(yang_info)] == "":
                 if len(re_domain) == 1:
-                    return conf_dict_list
-                re_list = re.split("\s", line.strip(), 1)
+                    continue
+                re_list = re.split(r"\s", stripped, 1)
                 conf_dict = dict()
                 conf_dict[re_list[0]] = re_list[1]
                 conf_dict_list.append(conf_dict)
             elif space_type[str(yang_info)] == "=":
-                re_list = re.split("=", line.strip(), 1)
+                re_list = re.split("=", stripped, 1)
+                if len(re_list) != 2:
+                    continue
                 conf_dict = dict()
                 conf_dict[re_list[0]] = re_list[1]
                 conf_dict_list.append(conf_dict)
