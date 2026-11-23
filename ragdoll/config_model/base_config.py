@@ -53,13 +53,13 @@ class BaseConfig(object):
         return：dst_conf和src_conf相同返回SYNCHRONIZED
                 dst_conf和src_conf不同返回NOT_SYNCHRONIZE
         """
-        res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
 
-        for src_list, dst_list in zip(sorted(src_conf_dict), sorted(dst_conf_dict)):
-            if str(src_conf_dict[src_list]) != str(dst_conf_dict[dst_list]):
-                res = NOT_SYNCHRONIZE
-                break
-        return res
+        if set(src_conf_dict) != set(dst_conf_dict):
+            return NOT_SYNCHRONIZE
+        for key in src_conf_dict:
+            if str(src_conf_dict[key]) != str(dst_conf_dict[key]):
+                return NOT_SYNCHRONIZE
+        return SYNCHRONIZED
 
