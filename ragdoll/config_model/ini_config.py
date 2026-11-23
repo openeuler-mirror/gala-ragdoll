@@ -153,8 +153,9 @@ class IniConfig(BaseConfig):
             for (key, value) in self.conf[section].items():
                 if key == "__name__":
                     continue
-                if value is not None:
-                    conf_item = " = ".join((key, str(value).replace('\n', '\n\t')))
+                if value is None:
+                    continue
+                conf_item = " = ".join((key, str(value).replace('\n', '\n\t')))
                 content = content + conf_item + '\n'
             content = content + '\n'
         return content
