@@ -38,11 +38,12 @@ class SshdConfig():
         for line in conf_list:
             if line is None or line.strip() == '' or line.strip()[0] in '#;':
                 continue
-            ssh_domain = re.split("\s+", line)
+            stripped = line.strip()
+            ssh_domain = re.split("\s+", stripped)
             if len(ssh_domain) == 1:
-                return conf_dict_list
+                continue
 
-            re_list = re.split('\s', line.strip(), 1)
+            re_list = re.split('\s', stripped, 1)
             conf_dict = dict()
             conf_dict[re_list[0]] = re_list[1]
             conf_dict_list.append(conf_dict)
