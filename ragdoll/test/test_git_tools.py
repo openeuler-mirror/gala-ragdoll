@@ -14,7 +14,6 @@
 
 import os
 import shutil
-import subprocess
 import tempfile
 import unittest
 
@@ -24,38 +23,36 @@ from ragdoll.utils.git_tools import GitTools
 class TestGitCreateUser(unittest.TestCase):
     """The return code must reflect the real result of the git config commands."""
 
-    def setUp(self):
-        self._tmp_dir = tempfile.mkdtemp(prefix="ragdoll-git-test-")
-        self._old_cwd = os.getcwd()
-        subprocess.run(["git", "init", "-q", self._tmp_dir], check=True)
-        os.chdir(self._tmp_dir)
-
-    def tearDown(self):
-        os.chdir(self._old_cwd)
-        shutil.rmtree(self._tmp_dir, ignore_errors=True)
-
     def test_success_returns_zero_and_sets_user(self):
-        git_tools = GitTools(self._tmp_dir)
-        res = git_tools.git_create_user("ragdoll", "ragdoll@example.com")
-        self.assertEqual(res, 0)
-        name = subprocess.run(["git", "config", "user.name"], check=True,
-                              capture_output=True, text=True).stdout.strip()
-        email = subprocess.run(["git", "config", "user.email"], check=True,
-                               capture_output=True, text=True).stdout.strip()
-        self.assertEqual(name, "ragdoll")
-        self.assertEqual(email, "ragdoll@example.com")
+        tmp_dir = tempfile.mkdtemp(prefix="ragdoll-git-test-")
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            git_tools = GitTools(tmp_dir)
+            self.assertEqual(git_tools.run_shell_return_code("git init -q"), 0)
+            res = git_tools.git_create_user("ragdoll", "ragdoll@example.com")
+            self.assertEqual(res, 0)
+            name = git_tools.run_shell_return_output(
+                "git config user.name").decode("utf-8").strip()
+            email = git_tools.run_shell_return_output(
+                "git config user.email").decode("utf-8").strip()
+            self.assertEqual(name, "ragdoll")
+            self.assertEqual(email, "ragdoll@example.com")
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_failure_outside_repository_returns_nonzero(self):
-        outside = tempfile.mkdtemp(prefix="ragdoll-not-repo-")
+        tmp_dir = tempfile.mkdtemp(prefix="ragdoll-not-repo-")
         old_cwd = os.getcwd()
-        os.chdir(outside)
+        os.chdir(tmp_dir)
         try:
-            git_tools = GitTools(outside)
+            git_tools = GitTools(tmp_dir)
             res = git_tools.git_create_user("ragdoll", "ragdoll@example.com")
             self.assertEqual(res, 1)
         finally:
             os.chdir(old_cwd)
-            shutil.rmtree(outside, ignore_errors=True)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
