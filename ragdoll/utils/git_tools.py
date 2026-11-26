@@ -47,15 +47,13 @@ class GitTools(object):
         """
         desc: Git initial configuration about add a user name and email
         """
-        returncode = 1
         cmd_add_user_name = "git config user.name {}".format(username)
-        gitTools = GitTools()
-        cmd_name_code = gitTools.run_shell_return_code(cmd_add_user_name)
+        cmd_name_code = self.run_shell_return_code(cmd_add_user_name)
         cmd_add_user_email = "git config user.email {}".format(useremail)
-        cmd_email_code = gitTools.run_shell_return_code(cmd_add_user_email)
-        if cmd_name_code and cmd_email_code:
-            returncode = 0
-        return returncode
+        cmd_email_code = self.run_shell_return_code(cmd_add_user_email)
+        if cmd_name_code == 0 and cmd_email_code == 0:
+            return 0
+        return 1
 
     def gitCommit(self, message):
         cwdDir = os.getcwd()
