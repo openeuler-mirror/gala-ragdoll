@@ -33,8 +33,7 @@ class FstabConfig(BaseHandlerConfig):
                 continue
             line_list = re.split("\s+", line.strip())
             if len(line_list) != FSTAB_COLUMN_NUM:
-                error_conf = True
-                break
+                continue
             res.append(line_list)
 
         return error_conf, res
